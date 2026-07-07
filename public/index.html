@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WFL — Programming that reads like plain English</title>
+  <meta name="description" content="WFL is a natural-language programming language: write store name as &quot;Alice&quot;, not cryptic symbols. Type inference, a built-in web server, and Elm-style errors." />
+  <meta property="og:title" content="WFL — Programming that reads like plain English" />
+  <meta property="og:description" content="WFL is a natural-language programming language: write store name as &quot;Alice&quot;, not cryptic symbols. Type inference, a built-in web server, and Elm-style errors." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/wfl-mark.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+<header class="site-nav">
+  <div class="site-nav__inner">
+    <a class="site-brand" href="index.html">
+      <img src="assets/img/wfl-mark.svg" alt="WFL logo" width="34" height="26" />
+      <span class="site-brand__word">WFL</span>
+      <span class="wfl-badge wfl-badge--amber"><span class="wfl-badge__dot"></span>Alpha</span>
+    </a>
+    <nav class="site-nav__links">
+      <a href="getting-started.html">Docs</a><a href="index.html#features">Features</a><a href="index.html#read-it">Compare</a><a href="index.html#errors">Errors</a>
+    </nav>
+    <div class="site-nav__actions">
+      <a class="site-nav__ghost" href="https://github.com/WebFirstLanguage/wfl" aria-label="GitHub"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4 1.5-4-2-6-2m12 4v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6 0-1.3-.5-2.4-1.3-3.3.1-.3.6-1.6-.1-3.2 0 0-1-.3-3.4 1.3a11.6 11.6 0 0 0-6 0C6.3 3.7 5.3 4 5.3 4c-.7 1.6-.2 2.9-.1 3.2C4.5 8.1 4 9.2 4 10.5c0 4.6 2.7 5.7 5.5 6-.4.4-.7.9-.6 1.9V22"/></svg></a>
+      <a class="wfl-btn wfl-btn--secondary wfl-btn--sm" href="getting-started.html">Docs</a>
+      <a class="wfl-btn wfl-btn--primary wfl-btn--sm" href="getting-started.html">Get started <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div class="wrap">
+
+  <!-- ============================================ Hero -->
+  <section class="hero">
+    <div class="hero__glow"></div>
+    <div class="hero__col">
+      <span class="eyebrow">WebFirst Language · v26.1 alpha</span>
+      <h1 class="hero__title">Programming that reads like <span class="grad">plain English</span>.</h1>
+      <p class="hero__sub">WFL mirrors how people think — natural-language syntax, almost no special characters, and errors that actually tell you what to do. A first language you never have to unlearn.</p>
+      <div class="hero__cta">
+        <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="getting-started.html"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c3 2 5 6 5 10l-2 4H9l-2-4C7 8 9 4 12 2Z"/><circle cx="12" cy="9" r="1.6"/><path d="M9 16c-2 1-3 3-3 5 2 0 4-1 5-3"/><path d="M15 16c2 1 3 3 3 5-2 0-4-1-5-3"/></svg> Get started</a>
+        <a class="wfl-btn wfl-btn--secondary wfl-btn--lg" href="https://github.com/WebFirstLanguage/wfl"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 5 6 6-6 6"/><path d="M12 19h8"/></svg> Try the REPL</a>
+      </div>
+      <div class="hero__meta">
+        <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> No frameworks</span><span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Built-in web server</span><span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Open source · Apache 2.0</span>
+      </div>
+    </div>
+    <div class="hero__code"><div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>server.wfl</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src"><span class="tok-comment">// A web server, in plain English</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src"><span class="tok-io">listen</span> on <span class="tok-io">port</span> <span class="tok-number">8080</span> <span class="tok-storage">as</span> server</span></div><div class="wfl-code__row"><span class="wfl-code__ln">3</span><span class="wfl-code__src"><span class="tok-io">display</span> <span class="tok-string">&quot;Running at http://127.0.0.1:8080&quot;</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">4</span><span class="wfl-code__src"> </span></div><div class="wfl-code__row"><span class="wfl-code__ln">5</span><span class="wfl-code__src"><span class="tok-io">wait</span> <span class="tok-keyword">for</span> <span class="tok-io">request</span> comes <span class="tok-keyword">in</span> on server <span class="tok-storage">as</span> req</span></div><div class="wfl-code__row"><span class="wfl-code__ln">6</span><span class="wfl-code__src"><span class="tok-control">check</span> <span class="tok-control">if</span> <span class="tok-operator">path</span> <span class="tok-operator">is</span> <span class="tok-operator">equal</span> <span class="tok-storage">to</span> <span class="tok-string">&quot;/&quot;</span><span class="tok-punct">:</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">7</span><span class="wfl-code__src">    <span class="tok-io">respond</span> <span class="tok-storage">to</span> req <span class="tok-operator">with</span> <span class="tok-string">&quot;Hello from WFL!&quot;</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">8</span><span class="wfl-code__src"><span class="tok-control">otherwise</span><span class="tok-punct">:</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">9</span><span class="wfl-code__src">    <span class="tok-io">respond</span> <span class="tok-storage">to</span> req <span class="tok-operator">with</span> <span class="tok-string">&quot;Not found&quot;</span> <span class="tok-operator">and</span> <span class="tok-operator">status</span> <span class="tok-number">404</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">10</span><span class="wfl-code__src"><span class="tok-control">end</span> <span class="tok-control">check</span></span></div></pre></div></div></div>
+  </section>
+
+  <!-- ============================================ Compare -->
+  <section class="section" id="read-it">
+    <div class="section__head">
+      <span class="eyebrow">Read it out loud</span>
+      <h2 class="section__title">You already know the syntax</h2>
+      <p class="section__lead">No cryptic operators, no ceremony. The same idea, side by side.</p>
+    </div>
+    <div class="compare">
+      <input class="tab-radio" type="radio" name="cmp" id="cmp-wfl" checked />
+      <input class="tab-radio" type="radio" name="cmp" id="cmp-js" />
+      <input class="tab-radio" type="radio" name="cmp" id="cmp-py" />
+      <div class="tablist" role="tablist">
+        <label class="tab-label" for="cmp-wfl">WFL</label>
+        <label class="tab-label" for="cmp-js">JavaScript</label>
+        <label class="tab-label" for="cmp-py">Python</label>
+      </div>
+      <div class="compare__body">
+        <div class="tab-panel" data-tab="wfl"><div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>access.wfl</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src"><span class="tok-storage">store</span> user age <span class="tok-storage">as</span> <span class="tok-number">28</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src"><span class="tok-storage">change</span> user age <span class="tok-storage">to</span> <span class="tok-number">29</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">3</span><span class="wfl-code__src"> </span></div><div class="wfl-code__row"><span class="wfl-code__ln">4</span><span class="wfl-code__src"><span class="tok-control">check</span> <span class="tok-control">if</span> user age <span class="tok-operator">is</span> <span class="tok-operator">greater</span> <span class="tok-operator">than</span> <span class="tok-number">18</span><span class="tok-punct">:</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">5</span><span class="wfl-code__src">    <span class="tok-io">display</span> <span class="tok-string">&quot;Access granted&quot;</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">6</span><span class="wfl-code__src"><span class="tok-control">otherwise</span><span class="tok-punct">:</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">7</span><span class="wfl-code__src">    <span class="tok-io">display</span> <span class="tok-string">&quot;Must be 18 or older&quot;</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">8</span><span class="wfl-code__src"><span class="tok-control">end</span> <span class="tok-control">check</span></span></div></pre></div></div></div>
+        <div class="tab-panel" data-tab="js"><div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>access.js</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src">let userAge = 28;</span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src">userAge = 29;</span></div><div class="wfl-code__row"><span class="wfl-code__ln">3</span><span class="wfl-code__src"> </span></div><div class="wfl-code__row"><span class="wfl-code__ln">4</span><span class="wfl-code__src">if (userAge &gt; 18) {</span></div><div class="wfl-code__row"><span class="wfl-code__ln">5</span><span class="wfl-code__src">    console.log(&quot;Access granted&quot;);</span></div><div class="wfl-code__row"><span class="wfl-code__ln">6</span><span class="wfl-code__src">} else {</span></div><div class="wfl-code__row"><span class="wfl-code__ln">7</span><span class="wfl-code__src">    console.log(&quot;Must be 18 or older&quot;);</span></div><div class="wfl-code__row"><span class="wfl-code__ln">8</span><span class="wfl-code__src">}</span></div></pre></div></div></div>
+        <div class="tab-panel" data-tab="py"><div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>access.py</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src">user_age = 28</span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src">user_age = 29</span></div><div class="wfl-code__row"><span class="wfl-code__ln">3</span><span class="wfl-code__src"> </span></div><div class="wfl-code__row"><span class="wfl-code__ln">4</span><span class="wfl-code__src">if user_age &gt; 18:</span></div><div class="wfl-code__row"><span class="wfl-code__ln">5</span><span class="wfl-code__src">    print(&quot;Access granted&quot;)</span></div><div class="wfl-code__row"><span class="wfl-code__ln">6</span><span class="wfl-code__src">else:</span></div><div class="wfl-code__row"><span class="wfl-code__ln">7</span><span class="wfl-code__src">    print(&quot;Must be 18 or older&quot;)</span></div></pre></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ Features -->
+  <section class="section" id="features">
+    <div class="section__head">
+      <span class="eyebrow">What's in the box</span>
+      <h2 class="section__title">Batteries included, jargon excluded</h2>
+    </div>
+    <div class="feature-grid">
+      
+      <article class="wfl-card wfl-card--accent wfl-card--interactive">
+        <div class="wfl-card__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8L12 3Z"/><path d="M19 14l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"/></svg></div>
+        <h3 class="wfl-card__title">Natural-language syntax</h3>
+        <p class="wfl-card__body">Write store name as &quot;Alice&quot; instead of cryptic symbols. Code that explains itself.</p>
+      </article>
+      
+      <article class="wfl-card wfl-card--accent wfl-card--interactive">
+        <div class="wfl-card__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3 class="wfl-card__title">Type safety with inference</h3>
+        <p class="wfl-card__body">The compiler infers types and catches mismatches before your program ever runs.</p>
+      </article>
+      
+      <article class="wfl-card wfl-card--accent wfl-card--interactive">
+        <div class="wfl-card__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01"/><path d="M7 16.5h.01"/></svg></div>
+        <h3 class="wfl-card__title">Built-in web server</h3>
+        <p class="wfl-card__body">listen on port 8080 — HTTP servers, routing and responses without a single framework.</p>
+      </article>
+      
+      <article class="wfl-card wfl-card--accent wfl-card--interactive">
+        <div class="wfl-card__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4c-2 0-3 1-3 3v1c0 1-.5 1.5-1 2 .5.5 1 1 1 2v1c0 2 1 3 3 3"/><path d="M17 4c2 0 3 1 3 3v1c0 1 .5 1.5 1 2-.5.5-1 1-1 2v1c0 2-1 3-3 3"/></svg></div>
+        <h3 class="wfl-card__title">Readable pattern matching</h3>
+        <p class="wfl-card__body">one or more letter followed by &quot;@&quot; — validation you can read without being a regex expert.</p>
+      </article>
+      
+      <article class="wfl-card wfl-card--accent wfl-card--interactive">
+        <div class="wfl-card__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7l9-5Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg></div>
+        <h3 class="wfl-card__title">Containers (OOP)</h3>
+        <p class="wfl-card__body">Classes, properties and actions expressed in the same plain-English grammar.</p>
+      </article>
+      
+      <article class="wfl-card wfl-card--accent wfl-card--interactive">
+        <div class="wfl-card__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5c0-1 .8-2 2-2h12c1.2 0 2 1 2 2v9c0 1-.8 2-2 2H9l-4 4V5Z"/><path d="M12 7v4"/><path d="M12 14h.01"/></svg></div>
+        <h3 class="wfl-card__title">Errors that help</h3>
+        <p class="wfl-card__body">Elm-inspired messages point at the line, explain the mismatch, and suggest a fix.</p>
+      </article>
+      
+    </div>
+  </section>
+
+  <!-- ============================================ Errors -->
+  <section class="section" id="errors">
+    <div class="errshow">
+      <div class="errshow__text">
+        <span class="eyebrow">Clear &amp; actionable</span>
+        <h2 class="section__title">Errors that read like a helpful colleague</h2>
+        <p class="section__lead">When something's off, WFL tells you exactly what it expected, what it found, and how to fix it — inspired by Elm.</p>
+        <div class="wfl-callout wfl-callout--tip" role="note">
+          <span class="wfl-callout__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8L12 3Z"/><path d="M19 14l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"/></svg></span>
+          <div class="wfl-callout__body">
+            <p class="wfl-callout__title">No error codes to google</p>
+            Every message includes the line, the mismatch, and a concrete suggestion.
+          </div>
+        </div>
+      </div>
+      <pre class="errshow__panel"><span class="err-title">✕ Type Error</span>  <span class="err-loc">line 5, column 8</span>
+
+    Expected: <span class="err-teal">Number</span>
+    Found:    <span class="err-amber">Text ("hello")</span>
+
+  The expression
+    <span class="err-mist">age plus "hello"</span>
+  cannot add a Number and Text.
+
+  <span class="err-amber">💡 Try</span> converting first:
+    <span class="err-mist">age plus 5</span>
+    <span class="err-loc">— or —</span>
+    <span class="err-mist">string of age with "hello"</span></pre>
+    </div>
+  </section>
+
+  <!-- ============================================ CTA -->
+  <section class="section" id="install">
+    <div class="cta">
+      <div class="cta__glow"></div>
+      <h2 class="cta__title">Say hello in one line</h2>
+      <p class="cta__sub">Install WFL and run your first program in under a minute.</p>
+      <div class="cta__term"><span class="cta__prompt">$</span> wfl hello.wfl <span class="cta__out">Hello, World!</span></div>
+      <div class="cta__actions">
+        <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="https://github.com/WebFirstLanguage/wfl/releases"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg> Download for Windows</a>
+        <a class="wfl-btn wfl-btn--ghost wfl-btn--lg" href="getting-started.html">Build from source <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</main>
+<footer class="site-foot">
+  <div class="site-foot__brand">
+    <div class="site-brand">
+      <img src="assets/img/wfl-mark.svg" alt="WFL logo" width="30" height="23" />
+      <span class="site-brand__word">WFL</span>
+    </div>
+    <p>Programming in plain English.<br />Built by Logbie LLC · Apache 2.0</p>
+  </div>
+  
+  <div class="site-foot__col">
+    <h4>Learn</h4>
+    <a href="getting-started.html">Introduction</a><a href="getting-started.html">Getting started</a><a href="getting-started.html">Language basics</a><a href="getting-started.html">Advanced features</a>
+  </div>
+  
+  <div class="site-foot__col">
+    <h4>Reference</h4>
+    <a href="https://github.com/WebFirstLanguage/wfl">Keywords</a><a href="https://github.com/WebFirstLanguage/wfl">Standard library</a><a href="https://github.com/WebFirstLanguage/wfl">Operators</a><a href="https://github.com/WebFirstLanguage/wfl">Error codes</a>
+  </div>
+  
+  <div class="site-foot__col">
+    <h4>Community</h4>
+    <a href="https://github.com/WebFirstLanguage/wfl">GitHub</a><a href="https://github.com/WebFirstLanguage/wfl/discussions">Discussions</a><a href="https://github.com/WebFirstLanguage/wfl/issues">Issues</a><a href="https://github.com/WebFirstLanguage/wfl/blob/main/CONTRIBUTING.md">Contributing</a>
+  </div>
+  
+</footer>
+
+</body>
+</html>

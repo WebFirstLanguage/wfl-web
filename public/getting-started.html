@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Getting started — WFL</title>
+  <meta name="description" content="Install WFL and write your first program — including a complete web server — in under a minute." />
+  <meta property="og:title" content="Getting started — WFL" />
+  <meta property="og:description" content="Install WFL and write your first program — including a complete web server — in under a minute." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/wfl-mark.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+<header class="site-nav">
+  <div class="site-nav__inner">
+    <a class="site-brand" href="index.html">
+      <img src="assets/img/wfl-mark.svg" alt="WFL logo" width="34" height="26" />
+      <span class="site-brand__word">WFL</span>
+      <span class="wfl-badge wfl-badge--amber"><span class="wfl-badge__dot"></span>Alpha</span>
+    </a>
+    <nav class="site-nav__links">
+      <a href="getting-started.html">Docs</a><a href="index.html#features">Features</a><a href="index.html#read-it">Compare</a><a href="index.html#errors">Errors</a>
+    </nav>
+    <div class="site-nav__actions">
+      <a class="site-nav__ghost" href="https://github.com/WebFirstLanguage/wfl" aria-label="GitHub"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4 1.5-4-2-6-2m12 4v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6 0-1.3-.5-2.4-1.3-3.3.1-.3.6-1.6-.1-3.2 0 0-1-.3-3.4 1.3a11.6 11.6 0 0 0-6 0C6.3 3.7 5.3 4 5.3 4c-.7 1.6-.2 2.9-.1 3.2C4.5 8.1 4 9.2 4 10.5c0 4.6 2.7 5.7 5.5 6-.4.4-.7.9-.6 1.9V22"/></svg></a>
+      <a class="wfl-btn wfl-btn--secondary wfl-btn--sm" href="getting-started.html">Docs</a>
+      <a class="wfl-btn wfl-btn--primary wfl-btn--sm" href="getting-started.html">Get started <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div class="wrap">
+  <div class="doc">
+    <aside class="doc__side">
+      <h4>Getting started</h4>
+      <a href="#install">Install</a>
+      <a href="#first">Your first program</a>
+      <a href="#run">Run it</a>
+      <a href="#server">A web server</a>
+      <a href="#next">Where to next</a>
+    </aside>
+
+    <div class="prose">
+      <span class="eyebrow">Getting started</span>
+      <h1 id="install">Write your first WFL program</h1>
+      <p class="lede">WFL mirrors how people think — natural-language syntax, almost no special characters, and errors that actually tell you what to do. A first language you never have to unlearn.</p>
+
+      <p>WFL is an open-source language built in Rust. Grab a release build, or build it
+        from source with <code>cargo build --release</code>. Then you have one command —
+        <code>wfl</code> — that runs a program, lints it, or drops you into a REPL.</p>
+      <div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>terminal</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src"># Build WFL from source (Rust)</span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src">cargo build --release</span></div><div class="wfl-code__row"><span class="wfl-code__ln">3</span><span class="wfl-code__src"> </span></div><div class="wfl-code__row"><span class="wfl-code__ln">4</span><span class="wfl-code__src"># ...or grab a release binary, then check it works</span></div><div class="wfl-code__row"><span class="wfl-code__ln">5</span><span class="wfl-code__src">wfl --version</span></div></pre></div></div>
+
+      <h2 id="first">Your first program</h2>
+      <p>Create a file called <code>hello.wfl</code>. There is no boilerplate, no
+        <code>main</code> function, and no semicolons — you write what you mean.</p>
+      <div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>hello.wfl</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src"><span class="tok-comment">// hello.wfl</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src"><span class="tok-storage">store</span> name <span class="tok-storage">as</span> <span class="tok-string">&quot;World&quot;</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">3</span><span class="wfl-code__src"><span class="tok-io">display</span> <span class="tok-string">&quot;Hello, &quot;</span> <span class="tok-operator">with</span> name</span></div></pre></div></div>
+
+      <div class="wfl-callout wfl-callout--tip" role="note" style="margin:1.5rem 0;">
+        <span class="wfl-callout__icon"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8L12 3Z"/><path d="M19 14l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"/></svg></span>
+        <div class="wfl-callout__body">
+          <p class="wfl-callout__title">Type it yourself</p>
+          Run <code>wfl</code> with no arguments to open the REPL and try each line live.
+        </div>
+      </div>
+
+      <h2 id="run">Run it</h2>
+      <p>Point the CLI at your file. That's the whole build step.</p>
+      <div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>terminal</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src">wfl hello.wfl</span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src">Hello, World!</span></div></pre></div></div>
+
+      <h2 id="server">A web server, in plain English</h2>
+      <p>No frameworks required — HTTP servers, routing, and responses are built in.
+        Here is a complete server that answers on port 8080:</p>
+      <div class="wfl-code wfl-code--gutter"><div class="wfl-code__bar"><span class="wfl-code__file"><span class="wfl-code__dot"></span>server.wfl</span></div><div class="wfl-code__scroll"><pre><div class="wfl-code__row"><span class="wfl-code__ln">1</span><span class="wfl-code__src"><span class="tok-comment">// A web server, in plain English</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">2</span><span class="wfl-code__src"><span class="tok-io">listen</span> on <span class="tok-io">port</span> <span class="tok-number">8080</span> <span class="tok-storage">as</span> server</span></div><div class="wfl-code__row"><span class="wfl-code__ln">3</span><span class="wfl-code__src"><span class="tok-io">display</span> <span class="tok-string">&quot;Running at http://127.0.0.1:8080&quot;</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">4</span><span class="wfl-code__src"> </span></div><div class="wfl-code__row"><span class="wfl-code__ln">5</span><span class="wfl-code__src"><span class="tok-io">wait</span> <span class="tok-keyword">for</span> <span class="tok-io">request</span> comes <span class="tok-keyword">in</span> on server <span class="tok-storage">as</span> req</span></div><div class="wfl-code__row"><span class="wfl-code__ln">6</span><span class="wfl-code__src"><span class="tok-control">check</span> <span class="tok-control">if</span> <span class="tok-operator">path</span> <span class="tok-operator">is</span> <span class="tok-operator">equal</span> <span class="tok-storage">to</span> <span class="tok-string">&quot;/&quot;</span><span class="tok-punct">:</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">7</span><span class="wfl-code__src">    <span class="tok-io">respond</span> <span class="tok-storage">to</span> req <span class="tok-operator">with</span> <span class="tok-string">&quot;Hello from WFL!&quot;</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">8</span><span class="wfl-code__src"><span class="tok-control">otherwise</span><span class="tok-punct">:</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">9</span><span class="wfl-code__src">    <span class="tok-io">respond</span> <span class="tok-storage">to</span> req <span class="tok-operator">with</span> <span class="tok-string">&quot;Not found&quot;</span> <span class="tok-operator">and</span> <span class="tok-operator">status</span> <span class="tok-number">404</span></span></div><div class="wfl-code__row"><span class="wfl-code__ln">10</span><span class="wfl-code__src"><span class="tok-control">end</span> <span class="tok-control">check</span></span></div></pre></div></div>
+
+      <h2 id="next">Where to next</h2>
+      <div class="step">
+        <span class="step__n">1</span>
+        <div class="step__body">
+          <h3>Read the foundations</h3>
+          <p>The 19 guiding principles and the No-Unlearning Invariant explain why WFL
+            reads the way it does.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step__n">2</span>
+        <div class="step__body">
+          <h3>Explore the standard library</h3>
+          <p>181+ built-in functions for text, lists, math, files, time, and crypto —
+            all in the same plain-English grammar.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step__n">3</span>
+        <div class="step__body">
+          <h3>Join the community</h3>
+          <p><a href="https://github.com/WebFirstLanguage/wfl">WFL is on GitHub</a> under Apache 2.0. Issues,
+            discussions, and contributions are all welcome.</p>
+        </div>
+      </div>
+
+      <p style="margin-top:2rem;">
+        <a class="wfl-btn wfl-btn--primary wfl-btn--md" href="index.html"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg> Back to the overview</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+</main>
+<footer class="site-foot">
+  <div class="site-foot__brand">
+    <div class="site-brand">
+      <img src="assets/img/wfl-mark.svg" alt="WFL logo" width="30" height="23" />
+      <span class="site-brand__word">WFL</span>
+    </div>
+    <p>Programming in plain English.<br />Built by Logbie LLC · Apache 2.0</p>
+  </div>
+  
+  <div class="site-foot__col">
+    <h4>Learn</h4>
+    <a href="getting-started.html">Introduction</a><a href="getting-started.html">Getting started</a><a href="getting-started.html">Language basics</a><a href="getting-started.html">Advanced features</a>
+  </div>
+  
+  <div class="site-foot__col">
+    <h4>Reference</h4>
+    <a href="https://github.com/WebFirstLanguage/wfl">Keywords</a><a href="https://github.com/WebFirstLanguage/wfl">Standard library</a><a href="https://github.com/WebFirstLanguage/wfl">Operators</a><a href="https://github.com/WebFirstLanguage/wfl">Error codes</a>
+  </div>
+  
+  <div class="site-foot__col">
+    <h4>Community</h4>
+    <a href="https://github.com/WebFirstLanguage/wfl">GitHub</a><a href="https://github.com/WebFirstLanguage/wfl/discussions">Discussions</a><a href="https://github.com/WebFirstLanguage/wfl/issues">Issues</a><a href="https://github.com/WebFirstLanguage/wfl/blob/main/CONTRIBUTING.md">Contributing</a>
+  </div>
+  
+</footer>
+
+</body>
+</html>

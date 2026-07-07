@@ -1,0 +1,15 @@
+<footer class="site-foot">
+  <div class="site-foot__brand">
+    <div class="site-brand">
+      <img src="assets/img/wfl-mark.svg" alt="WFL logo" width="30" height="23" />
+      <span class="site-brand__word">WFL</span>
+    </div>
+    <p>Programming in plain English.<br />Built by Logbie LLC · Apache 2.0</p>
+  </div>
+  {% for col in footer_cols %}
+  <div class="site-foot__col">
+    <h4>{{ col.title }}</h4>
+    {% for link in col.links %}<a href="{{ link.href }}">{{ link.label }}</a>{% endfor %}
+  </div>
+  {% endfor %}
+</footer>

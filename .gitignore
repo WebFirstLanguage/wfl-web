@@ -1,0 +1,6 @@
+# WFL debug reports (created on runtime errors)
+*_debug.txt
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
