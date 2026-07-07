@@ -1,0 +1,62 @@
+// ============================================================================
+// serve.wfl — the WFL website, rendered live by WFL on every request.
+//
+// A built-in WFL web server. Instead of writing static files (that's build.wfl),
+// this renders each page through the shared site model (lib/site.wfl) the moment
+// it is requested — like PHP, but in plain-English WFL. Static assets (CSS,
+// fonts, the logo) are streamed from public/assets with the right content type.
+//
+// Run from the repository root:   wfl serve.wfl   (or scripts/serve.sh)
+// Then open http://127.0.0.1:8080
+//
+// Bind address + port default to localhost:8080 (secure). To expose on a
+// network, set web_server_bind_address in a .wflcfg file (see the WFL docs).
+// ============================================================================
+
+include from "lib/site.wfl"
+
+store served_note as "Rendered live by WFL on this request (serve.wfl)."
+
+listen on port 8080 as web_server
+display "WFL website is live — open http://127.0.0.1:8080"
+display "Every page is rendered by WFL on each request. Ctrl+C to stop."
+
+main loop:
+    wait for request comes in on web_server as req
+    store req_path as path
+
+    check if req_path starts with "/assets/":
+        // Static asset. Validate before touching the filesystem so a crafted
+        // path like /assets/../secret cannot escape public/.
+        check if req_path contains "..":
+            respond to req with "Forbidden" and status 403
+        otherwise:
+            store fpath as "public" with req_path
+            check if file exists at fpath:
+                open file at fpath for reading binary as asset_file
+                store asset_bytes as read binary from asset_file
+                close file asset_file
+                respond to req with asset_bytes and content_type (mime_type of fpath)
+            otherwise:
+                respond to req with "Not found" and status 404
+            end check
+        end check
+    otherwise:
+        // A page. Normalize the URL to a route, then render it live.
+        store page_route as req_path
+        check if page_route is "/index.html":
+            change page_route to "/"
+        end check
+        check if page_route is "/getting-started.html":
+            change page_route to "/getting-started"
+        end check
+
+        store html_out as site_render of page_route and served_note
+        check if html_out is "":
+            store not_found as site_render of "/404" and served_note
+            respond to req with not_found and status 404 and content_type "text/html"
+        otherwise:
+            respond to req with html_out and content_type "text/html"
+        end check
+    end check
+end loop

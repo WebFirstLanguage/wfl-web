@@ -1,0 +1,259 @@
+// ============================================================================
+// site.wfl — the WFL website's shared model and page renderer.
+//
+// This is the single source of truth for the site's content and routing. Both
+// build.wfl (static: render once, write to public/) and serve.wfl (dynamic:
+// render on each request) call into it, so the two never drift.
+//
+// It is actions-only (no top-level side effects). The caller must have already
+// pulled in the engine and helpers it depends on:
+//     include from "lib/scribe.wfl"     (scribe_render_file)
+//     include from "lib/highlight.wfl"  (wfl_code_block, plain_code_block)
+//     include from "lib/icons.wfl"      (svg_icon)
+//
+// Public:
+//     site_render of page_route and served_note   -> HTML text, or "" for an
+//                                                unknown page_route (caller 404s)
+//     site_template_for of page_route             -> template path, or ""
+// ============================================================================
+
+include from "scribe.wfl"
+include from "highlight.wfl"
+include from "icons.wfl"
+
+
+// ---- small builders for the data model -------------------------------------
+
+define action called mk_link with parameters lbl and href:
+    create map m:
+        "label" is lbl
+        "href" is href
+    end map
+    return m
+end action
+
+define action called mk_feature with parameters ikey and ftitle and fbody:
+    create map m:
+        "icon" is svg_icon of ikey
+        "title" is ftitle
+        "body" is fbody
+    end map
+    return m
+end action
+
+define action called mk_col with parameters ctitle and links_list:
+    create map m:
+        "title" is ctitle
+        "links" is links_list
+    end map
+    return m
+end action
+
+
+// ---- all page_route-independent context (icons, nav, footer, code samples) ------
+
+define action called build_shared:
+    store repo_url as "https://github.com/WebFirstLanguage/wfl"
+
+    // Code samples, highlighted by the WFL highlighter.
+    store hero_src as "// A web server, in plain English
+listen on port 8080 as server
+display \"Running at http://127.0.0.1:8080\"
+
+wait for request comes in on server as req
+check if path is equal to \"/\":
+    respond to req with \"Hello from WFL!\"
+otherwise:
+    respond to req with \"Not found\" and status 404
+end check"
+
+    store compare_wfl_src as "store user age as 28
+change user age to 29
+
+check if user age is greater than 18:
+    display \"Access granted\"
+otherwise:
+    display \"Must be 18 or older\"
+end check"
+
+    store compare_js_src as "let userAge = 28;
+userAge = 29;
+
+if (userAge > 18) {
+    console.log(\"Access granted\");
+} else {
+    console.log(\"Must be 18 or older\");
+}"
+
+    store compare_py_src as "user_age = 28
+user_age = 29
+
+if user_age > 18:
+    print(\"Access granted\")
+else:
+    print(\"Must be 18 or older\")"
+
+    store install_src as "# Build WFL from source (Rust)
+cargo build --release
+
+# ...or grab a release binary, then check it works
+wfl --version"
+
+    store hello_src as "// hello.wfl
+store name as \"World\"
+display \"Hello, \" with name"
+
+    store run_src as "wfl hello.wfl
+Hello, World!"
+
+    // Icons referenced by name in the templates.
+    create map icons:
+        "check" is svg_icon of "check"
+        "arrow_right" is svg_icon of "arrow_right"
+        "rocket" is svg_icon of "rocket"
+        "terminal" is svg_icon of "terminal"
+        "download" is svg_icon of "download"
+        "github" is svg_icon of "github"
+        "sparkles" is svg_icon of "sparkles"
+        "book_open" is svg_icon of "book_open"
+    end map
+
+    // Navigation.
+    create list nav_links:
+    end list
+    push with nav_links and (mk_link of "Docs" and "getting-started.html")
+    push with nav_links and (mk_link of "Features" and "index.html#features")
+    push with nav_links and (mk_link of "Compare" and "index.html#read-it")
+    push with nav_links and (mk_link of "Errors" and "index.html#errors")
+
+    store hero_meta as ["No frameworks", "Built-in web server", "Open source · Apache 2.0"]
+
+    // Feature cards.
+    create list features:
+    end list
+    push with features and (mk_feature of "sparkles" and "Natural-language syntax" and "Write store name as \"Alice\" instead of cryptic symbols. Code that explains itself.")
+    push with features and (mk_feature of "shield_check" and "Type safety with inference" and "The compiler infers types and catches mismatches before your program ever runs.")
+    push with features and (mk_feature of "server" and "Built-in web server" and "listen on port 8080 — HTTP servers, routing and responses without a single framework.")
+    push with features and (mk_feature of "braces" and "Readable pattern matching" and "one or more letter followed by \"@\" — validation you can read without being a regex expert.")
+    push with features and (mk_feature of "box" and "Containers (OOP)" and "Classes, properties and actions expressed in the same plain-English grammar.")
+    push with features and (mk_feature of "alert" and "Errors that help" and "Elm-inspired messages point at the line, explain the mismatch, and suggest a fix.")
+
+    // Footer columns.
+    create list learn_links:
+    end list
+    push with learn_links and (mk_link of "Introduction" and "getting-started.html")
+    push with learn_links and (mk_link of "Getting started" and "getting-started.html")
+    push with learn_links and (mk_link of "Language basics" and "getting-started.html")
+    push with learn_links and (mk_link of "Advanced features" and "getting-started.html")
+
+    create list ref_links:
+    end list
+    push with ref_links and (mk_link of "Keywords" and repo_url)
+    push with ref_links and (mk_link of "Standard library" and repo_url)
+    push with ref_links and (mk_link of "Operators" and repo_url)
+    push with ref_links and (mk_link of "Error codes" and repo_url)
+
+    create list community_links:
+    end list
+    push with community_links and (mk_link of "GitHub" and repo_url)
+    push with community_links and (mk_link of "Discussions" and (repo_url with "/discussions"))
+    push with community_links and (mk_link of "Issues" and (repo_url with "/issues"))
+    push with community_links and (mk_link of "Contributing" and (repo_url with "/blob/main/CONTRIBUTING.md"))
+
+    create list footer_cols:
+    end list
+    push with footer_cols and (mk_col of "Learn" and learn_links)
+    push with footer_cols and (mk_col of "Reference" and ref_links)
+    push with footer_cols and (mk_col of "Community" and community_links)
+
+    create map shared:
+        "repo_url" is repo_url
+        "eyebrow" is "WebFirst Language · v26.1 alpha"
+        "hero_sub" is "WFL mirrors how people think — natural-language syntax, almost no special characters, and errors that actually tell you what to do. A first language you never have to unlearn."
+        "icons" is icons
+        "nav_links" is nav_links
+        "footer_cols" is footer_cols
+        "hero_meta" is hero_meta
+        "features" is features
+        "hero_code" is wfl_code_block of hero_src and "server.wfl"
+        "server_code" is wfl_code_block of hero_src and "server.wfl"
+        "compare_wfl" is wfl_code_block of compare_wfl_src and "access.wfl"
+        "compare_js" is plain_code_block of compare_js_src and "access.js"
+        "compare_py" is plain_code_block of compare_py_src and "access.py"
+        "install_code" is plain_code_block of install_src and "terminal"
+        "hello_code" is wfl_code_block of hello_src and "hello.wfl"
+        "run_code" is plain_code_block of run_src and "terminal"
+    end map
+    return shared
+end action
+
+
+// ---- per-page_route context -----------------------------------------------------
+// Every page receives the full data model plus its own title/description and
+// the "served_note" (how this page was produced). Extra keys are harmless.
+
+define action called site_context with parameters page_route and served_note:
+    store s as build_shared
+
+    store the_title as "WFL — Programming that reads like plain English"
+    store the_desc as "WFL is a natural-language programming language: write store name as \"Alice\", not cryptic symbols. Type inference, a built-in web server, and Elm-style errors."
+    check if page_route is "/getting-started":
+        change the_title to "Getting started — WFL"
+        change the_desc to "Install WFL and write your first program — including a complete web server — in under a minute."
+    otherwise:
+        check if page_route is "/404":
+            change the_title to "Page not found — WFL"
+            change the_desc to "That page took an unexpected branch."
+        end check
+    end check
+
+    create map ctx:
+        "page_title" is the_title
+        "page_desc" is the_desc
+        "served_note" is served_note
+        "repo_url" is s["repo_url"]
+        "eyebrow" is s["eyebrow"]
+        "hero_sub" is s["hero_sub"]
+        "icons" is s["icons"]
+        "nav_links" is s["nav_links"]
+        "footer_cols" is s["footer_cols"]
+        "hero_meta" is s["hero_meta"]
+        "features" is s["features"]
+        "hero_code" is s["hero_code"]
+        "server_code" is s["server_code"]
+        "compare_wfl" is s["compare_wfl"]
+        "compare_js" is s["compare_js"]
+        "compare_py" is s["compare_py"]
+        "install_code" is s["install_code"]
+        "hello_code" is s["hello_code"]
+        "run_code" is s["run_code"]
+    end map
+    return ctx
+end action
+
+
+// ---- routing ---------------------------------------------------------------
+
+define action called site_template_for with parameters page_route:
+    check if page_route is "/":
+        return "templates/index.html"
+    end check
+    check if page_route is "/getting-started":
+        return "templates/getting-started.html"
+    end check
+    check if page_route is "/404":
+        return "templates/404.html"
+    end check
+    return ""
+end action
+
+// Render a page_route to HTML. Returns "" for an unknown page_route so the caller can
+// decide what a miss means (write nothing / respond 404).
+define action called site_render with parameters page_route and served_note:
+    store tpl as site_template_for of page_route
+    check if tpl is "":
+        return ""
+    end check
+    store ctx as site_context of page_route and served_note
+    return scribe_render_file of tpl and ctx
+end action
