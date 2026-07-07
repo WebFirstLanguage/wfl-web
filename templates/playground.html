@@ -1,0 +1,86 @@
+{% extends "templates/base.html" %}
+{% block content %}
+<div class="wrap">
+
+  <section class="pg-head">
+    <span class="eyebrow">Live · powered by WFL</span>
+    <h1 class="pg-title">This page is running <span class="grad">WFL</span> right now</h1>
+    <p class="pg-sub">Everything below was produced by WFL on the server as this page loaded — the example
+      programs were executed live, and the tools compute on your input with the standard library. No
+      JavaScript runs the WFL; WFL does.</p>
+    <div class="pg-live">{{ icons.terminal | raw }} {{ served_note }}</div>
+  </section>
+
+  <!-- ========================== Examples: run live -->
+  <section class="pg-section">
+    <h2 class="pg-h2">Example programs, executed on each request</h2>
+    <p class="pg-lead">Real <code>.wfl</code> files in <code>playground/examples/</code>. The server reads
+      each one, highlights it, and runs it — the output is whatever the program just displayed.</p>
+
+    {% for e in examples %}
+    <article class="pg-example">
+      <header class="pg-example__head">
+        <h3>{{ e.label }}</h3>
+        <span>{{ e.desc }}</span>
+      </header>
+      <div class="pg-example__grid">
+        <div class="pg-example__code">{{ e.src_html | raw }}</div>
+        <div class="pg-example__out">
+          <div class="pg-example__bar">{{ icons.terminal | raw }} output — ran live by WFL</div>
+          <pre class="pg-example__pre">{{ e.output }}</pre>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+
+  <!-- ========================== Tools: compute on your input -->
+  <section class="pg-section">
+    <h2 class="pg-h2">Try it with your own input</h2>
+    <p class="pg-lead">Submit a value and WFL computes the answer server-side and re-renders this page.
+      (Interactive tools need the live server — <code>wfl serve.wfl</code>.)</p>
+
+    <div class="pg-tools">
+      <form class="pg-tool" method="post" action="/playground">
+        <input type="hidden" name="tool" value="hash" />
+        <div class="pg-tool__icon">{{ icons.sparkles | raw }}</div>
+        <h3>Hash it</h3>
+        <p>WFLHASH-256 and SHA-256 of your text — WFL's crypto module.</p>
+        <div class="pg-tool__row">
+          <input class="pg-input" type="text" name="input" placeholder="type anything"
+            value="{% if tool == 'hash' %}{{ tool_input }}{% endif %}" />
+          <button class="wfl-btn wfl-btn--primary wfl-btn--sm" type="submit">Hash</button>
+        </div>
+        {% if tool == 'hash' %}{{ tool_result | raw }}{% endif %}
+      </form>
+
+      <form class="pg-tool" method="post" action="/playground">
+        <input type="hidden" name="tool" value="text" />
+        <div class="pg-tool__icon">{{ icons.book_open | raw }}</div>
+        <h3>Text stats</h3>
+        <p>Length, word count, uppercase and reverse — the text module.</p>
+        <div class="pg-tool__row">
+          <input class="pg-input" type="text" name="input" placeholder="the quick brown fox"
+            value="{% if tool == 'text' %}{{ tool_input }}{% endif %}" />
+          <button class="wfl-btn wfl-btn--primary wfl-btn--sm" type="submit">Analyze</button>
+        </div>
+        {% if tool == 'text' %}{{ tool_result | raw }}{% endif %}
+      </form>
+
+      <form class="pg-tool" method="post" action="/playground">
+        <input type="hidden" name="tool" value="email" />
+        <div class="pg-tool__icon">{{ icons.check | raw }}</div>
+        <h3>Pattern match</h3>
+        <p>Does it look like an email? WFL's readable pattern engine decides.</p>
+        <div class="pg-tool__row">
+          <input class="pg-input" type="text" name="input" placeholder="ada@example.com"
+            value="{% if tool == 'email' %}{{ tool_input }}{% endif %}" />
+          <button class="wfl-btn wfl-btn--primary wfl-btn--sm" type="submit">Check</button>
+        </div>
+        {% if tool == 'email' %}{{ tool_result | raw }}{% endif %}
+      </form>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

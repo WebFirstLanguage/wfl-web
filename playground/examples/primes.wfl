@@ -1,0 +1,15 @@
+// Prime numbers up to 40, by trial division.
+count from 2 to 40:
+    store is_prime as yes
+    store d as 2
+    repeat while d times d is less than or equal to count:
+        check if count modulo d is equal to 0:
+            change is_prime to no
+            break
+        end check
+        change d to d plus 1
+    end repeat
+    check if is_prime:
+        display count
+    end check
+end count

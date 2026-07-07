@@ -1,0 +1,110 @@
+{% extends "templates/base.html" %}
+{% block content %}
+<div class="wrap">
+
+  <!-- ============================================ Hero -->
+  <section class="hero">
+    <div class="hero__glow"></div>
+    <div class="hero__col">
+      <span class="eyebrow">{{ eyebrow }}</span>
+      <h1 class="hero__title">Programming that reads like <span class="grad">plain English</span>.</h1>
+      <p class="hero__sub">{{ hero_sub }}</p>
+      <div class="hero__cta">
+        <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="getting-started.html">{{ icons.rocket | raw }} Get started</a>
+        <a class="wfl-btn wfl-btn--secondary wfl-btn--lg" href="{{ repo_url }}">{{ icons.terminal | raw }} Try the REPL</a>
+      </div>
+      <div class="hero__meta">
+        {% for m in hero_meta %}<span>{{ icons.check | raw }} {{ m }}</span>{% endfor %}
+      </div>
+    </div>
+    <div class="hero__code">{{ hero_code | raw }}</div>
+  </section>
+
+  <!-- ============================================ Compare -->
+  <section class="section" id="read-it">
+    <div class="section__head">
+      <span class="eyebrow">Read it out loud</span>
+      <h2 class="section__title">You already know the syntax</h2>
+      <p class="section__lead">No cryptic operators, no ceremony. The same idea, side by side.</p>
+    </div>
+    <div class="compare">
+      <input class="tab-radio" type="radio" name="cmp" id="cmp-wfl" checked />
+      <input class="tab-radio" type="radio" name="cmp" id="cmp-js" />
+      <input class="tab-radio" type="radio" name="cmp" id="cmp-py" />
+      <div class="tablist" role="tablist">
+        <label class="tab-label" for="cmp-wfl">WFL</label>
+        <label class="tab-label" for="cmp-js">JavaScript</label>
+        <label class="tab-label" for="cmp-py">Python</label>
+      </div>
+      <div class="compare__body">
+        <div class="tab-panel" data-tab="wfl">{{ compare_wfl | raw }}</div>
+        <div class="tab-panel" data-tab="js">{{ compare_js | raw }}</div>
+        <div class="tab-panel" data-tab="py">{{ compare_py | raw }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ Features -->
+  <section class="section" id="features">
+    <div class="section__head">
+      <span class="eyebrow">What's in the box</span>
+      <h2 class="section__title">Batteries included, jargon excluded</h2>
+    </div>
+    <div class="feature-grid">
+      {% for f in features %}
+      <article class="wfl-card wfl-card--accent wfl-card--interactive">
+        <div class="wfl-card__icon">{{ f.icon | raw }}</div>
+        <h3 class="wfl-card__title">{{ f.title }}</h3>
+        <p class="wfl-card__body">{{ f.body }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ============================================ Errors -->
+  <section class="section" id="errors">
+    <div class="errshow">
+      <div class="errshow__text">
+        <span class="eyebrow">Clear &amp; actionable</span>
+        <h2 class="section__title">Errors that read like a helpful colleague</h2>
+        <p class="section__lead">When something's off, WFL tells you exactly what it expected, what it found, and how to fix it — inspired by Elm.</p>
+        <div class="wfl-callout wfl-callout--tip" role="note">
+          <span class="wfl-callout__icon">{{ icons.sparkles | raw }}</span>
+          <div class="wfl-callout__body">
+            <p class="wfl-callout__title">No error codes to google</p>
+            Every message includes the line, the mismatch, and a concrete suggestion.
+          </div>
+        </div>
+      </div>
+      <pre class="errshow__panel"><span class="err-title">✕ Type Error</span>  <span class="err-loc">line 5, column 8</span>
+
+    Expected: <span class="err-teal">Number</span>
+    Found:    <span class="err-amber">Text ("hello")</span>
+
+  The expression
+    <span class="err-mist">age plus "hello"</span>
+  cannot add a Number and Text.
+
+  <span class="err-amber">💡 Try</span> converting first:
+    <span class="err-mist">age plus 5</span>
+    <span class="err-loc">— or —</span>
+    <span class="err-mist">string of age with "hello"</span></pre>
+    </div>
+  </section>
+
+  <!-- ============================================ CTA -->
+  <section class="section" id="install">
+    <div class="cta">
+      <div class="cta__glow"></div>
+      <h2 class="cta__title">Say hello in one line</h2>
+      <p class="cta__sub">Install WFL and run your first program in under a minute.</p>
+      <div class="cta__term"><span class="cta__prompt">$</span> wfl hello.wfl <span class="cta__out">Hello, World!</span></div>
+      <div class="cta__actions">
+        <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="{{ repo_url }}/releases">{{ icons.download | raw }} Download for Windows</a>
+        <a class="wfl-btn wfl-btn--ghost wfl-btn--lg" href="getting-started.html">Build from source {{ icons.arrow_right | raw }}</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

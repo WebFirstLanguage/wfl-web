@@ -1,0 +1,9 @@
+// The first 15 Fibonacci numbers, built with two running totals.
+store a as 0
+store b as 1
+count from 1 to 15:
+    display a
+    store sum_ab as a plus b
+    change a to b
+    change b to sum_ab
+end count

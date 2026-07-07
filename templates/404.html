@@ -1,0 +1,14 @@
+{% extends "templates/base.html" %}
+{% block content %}
+<div class="wrap">
+  <section class="notfound">
+    <div class="notfound__code">404</div>
+    <h1>This page took an unexpected branch</h1>
+    <p>The page you're looking for isn't here. Let's get you back to something that runs.</p>
+    <div class="cta__actions">
+      <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="index.html">{{ icons.arrow_right | raw }} Back home</a>
+      <a class="wfl-btn wfl-btn--secondary wfl-btn--lg" href="getting-started.html">Read the docs</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

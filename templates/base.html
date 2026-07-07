@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ page_title }}</title>
+  <meta name="description" content="{{ page_desc }}" />
+  <meta property="og:title" content="{{ page_title }}" />
+  <meta property="og:description" content="{{ page_desc }}" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="assets/img/wfl-mark.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+{% include "templates/partials/nav.html" %}
+<main>
+{% block content %}{% endblock %}
+</main>
+{% include "templates/partials/footer.html" %}
+</body>
+</html>

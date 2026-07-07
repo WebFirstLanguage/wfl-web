@@ -1,0 +1,17 @@
+<header class="site-nav">
+  <div class="site-nav__inner">
+    <a class="site-brand" href="index.html">
+      <img src="assets/img/wfl-mark.svg" alt="WFL logo" width="34" height="26" />
+      <span class="site-brand__word">WFL</span>
+      <span class="wfl-badge wfl-badge--amber"><span class="wfl-badge__dot"></span>Alpha</span>
+    </a>
+    <nav class="site-nav__links">
+      {% for l in nav_links %}<a href="{{ l.href }}">{{ l.label }}</a>{% endfor %}
+    </nav>
+    <div class="site-nav__actions">
+      <a class="site-nav__ghost" href="{{ repo_url }}" aria-label="GitHub">{{ icons.github | raw }}</a>
+      <a class="wfl-btn wfl-btn--secondary wfl-btn--sm" href="getting-started.html">Docs</a>
+      <a class="wfl-btn wfl-btn--primary wfl-btn--sm" href="getting-started.html">Get started {{ icons.arrow_right | raw }}</a>
+    </div>
+  </div>
+</header>

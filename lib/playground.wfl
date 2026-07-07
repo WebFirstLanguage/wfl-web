@@ -1,0 +1,177 @@
+// ============================================================================
+// playground.wfl — the live, WFL-powered part of the site.
+//
+// This is what makes serve.wfl more than a static file server: the /playground
+// page runs actual WFL on each request. It:
+//   * reads three real WFL example programs, highlights their source, and runs
+//     them live (execute wfl file … and read output), showing genuine output;
+//   * offers interactive tools that compute on *your* input using the WFL
+//     standard library — WFLHASH + SHA-256 (crypto), text stats (text module),
+//     and email validation (the pattern engine).
+//
+// It builds on lib/site.wfl (nav, footer, icons, the Scribe engine, the WFL
+// highlighter). Every cross-file action takes at least one argument, because a
+// zero-argument action can't be called across included files in WFL.
+//
+// Public:  playground_render of tool and user_input and served_note  -> HTML
+// ============================================================================
+
+include from "site.wfl"
+
+
+// ---- example programs (whitelisted; names map to playground/examples/*.wfl) -
+
+define action called pg_is_example with parameters ename:
+    check if ename is "fizzbuzz":
+        return yes
+    end check
+    check if ename is "fibonacci":
+        return yes
+    end check
+    check if ename is "primes":
+        return yes
+    end check
+    return no
+end action
+
+define action called pg_example_source with parameters ename:
+    check if pg_is_example of ename:
+        return scribe_read_file of ("playground/examples/" with ename with ".wfl")
+    end check
+    return ""
+end action
+
+// Run an example live and capture whatever it displays. A broken program can't
+// crash the server — execute turns its errors into a catchable error here.
+define action called pg_run_example with parameters ename:
+    check if pg_is_example of ename:
+        store epath as "playground/examples/" with ename with ".wfl"
+        try:
+            execute wfl file at epath and read output as ex_out
+            return ex_out
+        catch:
+            return "[could not run this example]"
+        end try
+    end check
+    return ""
+end action
+
+// One example card: highlighted source + live output.
+define action called pg_example_card with parameters ename and elabel and edesc:
+    store src as pg_example_source of ename
+    create map m:
+        "name" is ename
+        "label" is elabel
+        "desc" is edesc
+        "src_html" is wfl_code_block of src and (ename with ".wfl")
+        "output" is pg_run_example of ename
+    end map
+    return m
+end action
+
+
+// Read a field from a parsed form/query map, with a fallback when absent.
+define action called form_get with parameters form_map and field_key and fallback:
+    check if (typeof of form_map) is "Object":
+        check if form_map contains field_key:
+            return form_map[field_key]
+        end check
+    end check
+    return fallback
+end action
+
+
+// ---- interactive tools (compute live on user input) ------------------------
+
+define action called pg_word_count with parameters user_input:
+    store parts as split user_input by " "
+    store n as 0
+    for each w in parts:
+        check if (length of (trim of w)) is greater than 0:
+            change n to n plus 1
+        end check
+    end for
+    return n
+end action
+
+define action called pg_is_email with parameters user_input:
+    create pattern email:
+        one or more letter or digit
+        followed by "@"
+        followed by one or more letter or digit
+        followed by "."
+        followed by 2 to 4 letter
+    end pattern
+    check if user_input matches email:
+        return yes
+    end check
+    return no
+end action
+
+define action called pg_out_line with parameters k and v:
+    return "<div class=\"pg-out__line\"><span class=\"pg-out__k\">" with k with "</span><span class=\"pg-out__v\">" with v with "</span></div>"
+end action
+
+// Build the result HTML for a tool given the user's input. Returns "" when
+// there is nothing to show yet (no input submitted for this tool).
+define action called pg_tool_result with parameters tool and user_input:
+    check if (length of user_input) is equal to 0:
+        return ""
+    end check
+    store esc as hl_escape of user_input
+
+    check if tool is "hash":
+        store hrows as pg_out_line of "wflhash256" and (wflhash256 of user_input)
+        change hrows to hrows with (pg_out_line of "sha256" and (sha256 of user_input))
+        return "<div class=\"pg-out\">" with hrows with "</div>"
+    end check
+
+    check if tool is "text":
+        store trows as pg_out_line of "length" and ("" with (length of user_input))
+        change trows to trows with (pg_out_line of "words" and ("" with (pg_word_count of user_input)))
+        change trows to trows with (pg_out_line of "uppercase" and (hl_escape of (touppercase of user_input)))
+        change trows to trows with (pg_out_line of "reversed" and (hl_escape of (reverse of user_input)))
+        return "<div class=\"pg-out\">" with trows with "</div>"
+    end check
+
+    check if tool is "email":
+        check if pg_is_email of user_input:
+            return "<div class=\"pg-out pg-out--ok\">&#10003; &ldquo;" with esc with "&rdquo; matches the email pattern</div>"
+        end check
+        return "<div class=\"pg-out pg-out--bad\">&#10007; &ldquo;" with esc with "&rdquo; does not match the email pattern</div>"
+    end check
+
+    return ""
+end action
+
+
+// ---- render the playground page --------------------------------------------
+
+define action called playground_render with parameters tool and user_input and served_note:
+    store s as build_shared of "x"
+
+    create list examples:
+    end list
+    push with examples and (pg_example_card of "fizzbuzz" and "FizzBuzz" and "Nested conditionals and the modulo operator.")
+    push with examples and (pg_example_card of "fibonacci" and "Fibonacci" and "A count loop carrying two running totals.")
+    push with examples and (pg_example_card of "primes" and "Primes" and "Trial division with a while loop and break.")
+
+    store tool_result as pg_tool_result of tool and user_input
+
+    create map ctx:
+        "page_title" is "Playground — WFL, live"
+        "page_desc" is "This page is served by WFL: it runs real WFL example programs and computes on your input live, using the standard library — WFLHASH, text tools, and the pattern engine."
+        "served_note" is served_note
+        "repo_url" is s["repo_url"]
+        "eyebrow" is s["eyebrow"]
+        "hero_sub" is s["hero_sub"]
+        "icons" is s["icons"]
+        "nav_links" is s["nav_links"]
+        "footer_cols" is s["footer_cols"]
+        "examples" is examples
+        "tool" is tool
+        "tool_input" is user_input
+        "tool_result" is tool_result
+    end map
+    return scribe_render_file of "templates/playground.html" and ctx
+end action
