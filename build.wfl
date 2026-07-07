@@ -9,12 +9,11 @@
 // Run from the repository root:   wfl build.wfl   (or scripts/build.sh)
 // ============================================================================
 
-include from "lib/site.wfl"
+include from "lib/playground.wfl"
 
 store served_note as "Generated as static HTML by build.wfl."
 
-define action called write_page with parameters page_route and out_path:
-    store out_html as site_render of page_route and served_note
+define action called write_file_page with parameters out_html and out_path:
     open file at out_path for writing as page_file
     wait for write content out_html into page_file
     close file page_file
@@ -22,8 +21,17 @@ define action called write_page with parameters page_route and out_path:
     return yes
 end action
 
+define action called write_page with parameters page_route and out_path:
+    store out_html as site_render of page_route and served_note
+    return write_file_page of out_html and out_path
+end action
+
 display "Building the WFL website..."
 store ok_index as write_page of "/" and "public/index.html"
 store ok_docs as write_page of "/getting-started" and "public/getting-started.html"
 store ok_404 as write_page of "/404" and "public/404.html"
-display "Done. 3 pages generated into public/."
+// The playground: examples run at build time; interactive tools need the live
+// server. Rendered here so the page is browsable on a static host too.
+store pg_out as playground_render of "" and "" and "Rendered at build time — interactive tools need the live server (wfl serve.wfl)."
+store ok_pg as write_file_page of pg_out and "public/playground.html"
+display "Done. 4 pages generated into public/."

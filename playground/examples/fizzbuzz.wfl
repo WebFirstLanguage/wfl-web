@@ -1,0 +1,17 @@
+// FizzBuzz, in plain English — no symbols, just words.
+// "modulo" is the word form of the % operator.
+count from 1 to 20:
+    check if count modulo 15 is equal to 0:
+        display "FizzBuzz"
+    otherwise:
+        check if count modulo 3 is equal to 0:
+            display "Fizz"
+        otherwise:
+            check if count modulo 5 is equal to 0:
+                display "Buzz"
+            otherwise:
+                display count
+            end check
+        end check
+    end check
+end count

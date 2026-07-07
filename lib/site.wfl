@@ -52,7 +52,10 @@ end action
 
 // ---- all page_route-independent context (icons, nav, footer, code samples) ------
 
-define action called build_shared:
+// `seed` is unused; a zero-argument action can't be called across included
+// files (WFL parses a bare cross-file name as a variable), so every shared
+// action takes at least one argument.
+define action called build_shared with parameters seed:
     store repo_url as "https://github.com/WebFirstLanguage/wfl"
 
     // Code samples, highlighted by the WFL highlighter.
@@ -122,9 +125,9 @@ Hello, World!"
     create list nav_links:
     end list
     push with nav_links and (mk_link of "Docs" and "getting-started.html")
+    push with nav_links and (mk_link of "Playground" and "playground.html")
     push with nav_links and (mk_link of "Features" and "index.html#features")
     push with nav_links and (mk_link of "Compare" and "index.html#read-it")
-    push with nav_links and (mk_link of "Errors" and "index.html#errors")
 
     store hero_meta as ["No frameworks", "Built-in web server", "Open source · Apache 2.0"]
 
@@ -193,7 +196,7 @@ end action
 // the "served_note" (how this page was produced). Extra keys are harmless.
 
 define action called site_context with parameters page_route and served_note:
-    store s as build_shared
+    store s as build_shared of "x"
 
     store the_title as "WFL — Programming that reads like plain English"
     store the_desc as "WFL is a natural-language programming language: write store name as \"Alice\", not cryptic symbols. Type inference, a built-in web server, and Elm-style errors."
