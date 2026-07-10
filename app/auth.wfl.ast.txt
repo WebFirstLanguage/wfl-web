@@ -1,0 +1,1346 @@
+AST output for: app/auth.wfl
+==============================================
+
+Program with 11 statements:
+
+Statement #1: IncludeStatement {
+    path: Literal(
+        String(
+            "db.wfl",
+        ),
+        9,
+        14,
+    ),
+    line: 9,
+    column: 1,
+}
+
+Statement #2: ActionDefinition {
+    name: "new_session_id",
+    parameters: [],
+    body: [
+        ReturnStatement {
+            value: Some(
+                FunctionCall {
+                    function: Variable(
+                        "secure_random_bytes",
+                        13,
+                        12,
+                    ),
+                    arguments: [
+                        Argument {
+                            name: None,
+                            value: Literal(
+                                Integer(
+                                    32,
+                                ),
+                                13,
+                                35,
+                            ),
+                        },
+                    ],
+                    line: 13,
+                    column: 32,
+                },
+            ),
+            line: 13,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 14,
+    column: 11,
+}
+
+Statement #3: ActionDefinition {
+    name: "login_check",
+    parameters: [
+        Parameter {
+            name: "conn",
+            param_type: None,
+            default_value: None,
+            line: 17,
+            column: 50,
+        },
+        Parameter {
+            name: "username",
+            param_type: None,
+            default_value: None,
+            line: 17,
+            column: 59,
+        },
+        Parameter {
+            name: "plaintext",
+            param_type: None,
+            default_value: None,
+            line: 17,
+            column: 72,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "user_row",
+            value: FunctionCall {
+                function: Variable(
+                    "user_by_username",
+                    18,
+                    23,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "conn",
+                            18,
+                            43,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "username",
+                            18,
+                            52,
+                        ),
+                    },
+                ],
+                line: 18,
+                column: 40,
+            },
+            is_constant: false,
+            line: 18,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "user_row",
+                    19,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Nothing,
+                    19,
+                    26,
+                ),
+                line: 19,
+                column: 23,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: None,
+                    line: 20,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 19,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "ok",
+            value: FunctionCall {
+                function: Variable(
+                    "verify_password",
+                    22,
+                    17,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "plaintext",
+                            22,
+                            36,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: IndexAccess {
+                            collection: Variable(
+                                "user_row",
+                                22,
+                                50,
+                            ),
+                            index: Literal(
+                                String(
+                                    "password_hash",
+                                ),
+                                22,
+                                59,
+                            ),
+                            line: 22,
+                            column: 58,
+                        },
+                    },
+                ],
+                line: 22,
+                column: 33,
+            },
+            is_constant: false,
+            line: 22,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "ok",
+                    23,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Boolean(
+                        true,
+                    ),
+                    23,
+                    29,
+                ),
+                line: 23,
+                column: 17,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Variable(
+                            "user_row",
+                            24,
+                            16,
+                        ),
+                    ),
+                    line: 24,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 23,
+            column: 5,
+        },
+        ReturnStatement {
+            value: None,
+            line: 26,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 27,
+    column: 11,
+}
+
+Statement #4: ActionDefinition {
+    name: "session_start",
+    parameters: [
+        Parameter {
+            name: "conn",
+            param_type: None,
+            default_value: None,
+            line: 33,
+            column: 52,
+        },
+        Parameter {
+            name: "user_id",
+            param_type: None,
+            default_value: None,
+            line: 33,
+            column: 61,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "sid",
+            value: Variable(
+                "new_session_id",
+                34,
+                18,
+            ),
+            is_constant: false,
+            line: 34,
+            column: 5,
+        },
+        DatabaseQueryStatement {
+            db: Variable(
+                "conn",
+                35,
+                23,
+            ),
+            sql: Literal(
+                String(
+                    "SELECT datetime('now', '+7 days') AS exp",
+                ),
+                35,
+                39,
+            ),
+            parameters: None,
+            variable_name: "exp_rows",
+            kind: Query,
+            line: 35,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "exp_row",
+            value: IndexAccess {
+                collection: Variable(
+                    "exp_rows",
+                    36,
+                    22,
+                ),
+                index: Literal(
+                    Integer(
+                        0,
+                    ),
+                    36,
+                    31,
+                ),
+                line: 36,
+                column: 30,
+            },
+            is_constant: false,
+            line: 36,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "expires_at",
+            value: IndexAccess {
+                collection: Variable(
+                    "exp_row",
+                    37,
+                    25,
+                ),
+                index: Literal(
+                    String(
+                        "exp",
+                    ),
+                    37,
+                    33,
+                ),
+                line: 37,
+                column: 32,
+            },
+            is_constant: false,
+            line: 37,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "csrf",
+            value: Variable(
+                "generate_csrf_token",
+                38,
+                19,
+            ),
+            is_constant: false,
+            line: 38,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "created",
+            value: FunctionCall {
+                function: Variable(
+                    "session_create",
+                    39,
+                    22,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "conn",
+                            39,
+                            40,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "sid",
+                            39,
+                            49,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "user_id",
+                            39,
+                            57,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "expires_at",
+                            39,
+                            69,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "csrf",
+                            39,
+                            84,
+                        ),
+                    },
+                ],
+                line: 39,
+                column: 37,
+            },
+            is_constant: false,
+            line: 39,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Variable(
+                    "sid",
+                    40,
+                    12,
+                ),
+            ),
+            line: 40,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 41,
+    column: 11,
+}
+
+Statement #5: ActionDefinition {
+    name: "sid_from_cookie",
+    parameters: [
+        Parameter {
+            name: "cookie_header",
+            param_type: None,
+            default_value: None,
+            line: 46,
+            column: 54,
+        },
+    ],
+    body: [
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "cookie_header",
+                    47,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Nothing,
+                    47,
+                    31,
+                ),
+                line: 47,
+                column: 28,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            String(
+                                "",
+                            ),
+                            48,
+                            16,
+                        ),
+                    ),
+                    line: 48,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 47,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "cookies",
+            value: FunctionCall {
+                function: Variable(
+                    "parse_cookies",
+                    50,
+                    22,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "cookie_header",
+                            50,
+                            39,
+                        ),
+                    },
+                ],
+                line: 50,
+                column: 36,
+            },
+            is_constant: false,
+            line: 50,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                FunctionCall {
+                    function: Variable(
+                        "field_or",
+                        51,
+                        12,
+                    ),
+                    arguments: [
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "cookies",
+                                51,
+                                24,
+                            ),
+                        },
+                        Argument {
+                            name: None,
+                            value: Literal(
+                                String(
+                                    "sid",
+                                ),
+                                51,
+                                36,
+                            ),
+                        },
+                        Argument {
+                            name: None,
+                            value: Literal(
+                                String(
+                                    "",
+                                ),
+                                51,
+                                46,
+                            ),
+                        },
+                    ],
+                    line: 51,
+                    column: 21,
+                },
+            ),
+            line: 51,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 52,
+    column: 11,
+}
+
+Statement #6: ActionDefinition {
+    name: "current_user",
+    parameters: [
+        Parameter {
+            name: "conn",
+            param_type: None,
+            default_value: None,
+            line: 55,
+            column: 51,
+        },
+        Parameter {
+            name: "cookie_header",
+            param_type: None,
+            default_value: None,
+            line: 55,
+            column: 60,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "sid",
+            value: FunctionCall {
+                function: Variable(
+                    "sid_from_cookie",
+                    56,
+                    18,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "cookie_header",
+                            56,
+                            37,
+                        ),
+                    },
+                ],
+                line: 56,
+                column: 34,
+            },
+            is_constant: false,
+            line: 56,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "sid",
+                    57,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    String(
+                        "",
+                    ),
+                    57,
+                    30,
+                ),
+                line: 57,
+                column: 18,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: None,
+                    line: 58,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 57,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                FunctionCall {
+                    function: Variable(
+                        "session_user",
+                        60,
+                        12,
+                    ),
+                    arguments: [
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "conn",
+                                60,
+                                28,
+                            ),
+                        },
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "sid",
+                                60,
+                                37,
+                            ),
+                        },
+                    ],
+                    line: 60,
+                    column: 25,
+                },
+            ),
+            line: 60,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 61,
+    column: 11,
+}
+
+Statement #7: ActionDefinition {
+    name: "logout_by_cookie",
+    parameters: [
+        Parameter {
+            name: "conn",
+            param_type: None,
+            default_value: None,
+            line: 64,
+            column: 55,
+        },
+        Parameter {
+            name: "cookie_header",
+            param_type: None,
+            default_value: None,
+            line: 64,
+            column: 64,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "sid",
+            value: FunctionCall {
+                function: Variable(
+                    "sid_from_cookie",
+                    65,
+                    18,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "cookie_header",
+                            65,
+                            37,
+                        ),
+                    },
+                ],
+                line: 65,
+                column: 34,
+            },
+            is_constant: false,
+            line: 65,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "sid",
+                    66,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    String(
+                        "",
+                    ),
+                    66,
+                    30,
+                ),
+                line: 66,
+                column: 18,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                false,
+                            ),
+                            67,
+                            16,
+                        ),
+                    ),
+                    line: 67,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 66,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "gone",
+            value: FunctionCall {
+                function: Variable(
+                    "session_delete",
+                    69,
+                    19,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "conn",
+                            69,
+                            37,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "sid",
+                            69,
+                            46,
+                        ),
+                    },
+                ],
+                line: 69,
+                column: 34,
+            },
+            is_constant: false,
+            line: 69,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Literal(
+                    Boolean(
+                        true,
+                    ),
+                    70,
+                    12,
+                ),
+            ),
+            line: 70,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 71,
+    column: 11,
+}
+
+Statement #8: ActionDefinition {
+    name: "csrf_ok",
+    parameters: [
+        Parameter {
+            name: "user",
+            param_type: None,
+            default_value: None,
+            line: 78,
+            column: 46,
+        },
+        Parameter {
+            name: "submitted",
+            param_type: None,
+            default_value: None,
+            line: 78,
+            column: 55,
+        },
+    ],
+    body: [
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "user",
+                    79,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Nothing,
+                    79,
+                    22,
+                ),
+                line: 79,
+                column: 19,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                false,
+                            ),
+                            80,
+                            16,
+                        ),
+                    ),
+                    line: 80,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 79,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "submitted",
+                    82,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Nothing,
+                    82,
+                    27,
+                ),
+                line: 82,
+                column: 24,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                false,
+                            ),
+                            83,
+                            16,
+                        ),
+                    ),
+                    line: 83,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 82,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "submitted",
+                    85,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    String(
+                        "",
+                    ),
+                    85,
+                    36,
+                ),
+                line: 85,
+                column: 24,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                false,
+                            ),
+                            86,
+                            16,
+                        ),
+                    ),
+                    line: 86,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 85,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "expected",
+            value: FunctionCall {
+                function: Variable(
+                    "field_or",
+                    88,
+                    23,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "user",
+                            88,
+                            35,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Literal(
+                            String(
+                                "csrf_token",
+                            ),
+                            88,
+                            44,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Literal(
+                            String(
+                                "",
+                            ),
+                            88,
+                            61,
+                        ),
+                    },
+                ],
+                line: 88,
+                column: 32,
+            },
+            is_constant: false,
+            line: 88,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "expected",
+                    89,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    String(
+                        "",
+                    ),
+                    89,
+                    35,
+                ),
+                line: 89,
+                column: 23,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                false,
+                            ),
+                            90,
+                            16,
+                        ),
+                    ),
+                    line: 90,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 89,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                FunctionCall {
+                    function: Variable(
+                        "constant_time_equals",
+                        92,
+                        12,
+                    ),
+                    arguments: [
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "expected",
+                                92,
+                                36,
+                            ),
+                        },
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "submitted",
+                                92,
+                                49,
+                            ),
+                        },
+                    ],
+                    line: 92,
+                    column: 33,
+                },
+            ),
+            line: 92,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 93,
+    column: 11,
+}
+
+Statement #9: ActionDefinition {
+    name: "is_admin",
+    parameters: [
+        Parameter {
+            name: "user",
+            param_type: None,
+            default_value: None,
+            line: 97,
+            column: 47,
+        },
+    ],
+    body: [
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "user",
+                    98,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Nothing,
+                    98,
+                    22,
+                ),
+                line: 98,
+                column: 19,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                false,
+                            ),
+                            99,
+                            16,
+                        ),
+                    ),
+                    line: 99,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 98,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: IndexAccess {
+                    collection: Variable(
+                        "user",
+                        101,
+                        14,
+                    ),
+                    index: Literal(
+                        String(
+                            "role",
+                        ),
+                        101,
+                        19,
+                    ),
+                    line: 101,
+                    column: 18,
+                },
+                operator: Equals,
+                right: Literal(
+                    String(
+                        "admin",
+                    ),
+                    101,
+                    39,
+                ),
+                line: 101,
+                column: 27,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                true,
+                            ),
+                            102,
+                            16,
+                        ),
+                    ),
+                    line: 102,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 101,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Literal(
+                    Boolean(
+                        false,
+                    ),
+                    104,
+                    12,
+                ),
+            ),
+            line: 104,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 105,
+    column: 11,
+}
+
+Statement #10: ActionDefinition {
+    name: "can_edit",
+    parameters: [
+        Parameter {
+            name: "user",
+            param_type: None,
+            default_value: None,
+            line: 109,
+            column: 47,
+        },
+        Parameter {
+            name: "author_id",
+            param_type: None,
+            default_value: None,
+            line: 109,
+            column: 56,
+        },
+    ],
+    body: [
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "user",
+                    110,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Nothing,
+                    110,
+                    22,
+                ),
+                line: 110,
+                column: 19,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                false,
+                            ),
+                            111,
+                            16,
+                        ),
+                    ),
+                    line: 111,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 110,
+            column: 5,
+        },
+        IfStatement {
+            condition: FunctionCall {
+                function: Variable(
+                    "is_admin",
+                    113,
+                    14,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "user",
+                            113,
+                            26,
+                        ),
+                    },
+                ],
+                line: 113,
+                column: 23,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                true,
+                            ),
+                            114,
+                            16,
+                        ),
+                    ),
+                    line: 114,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 113,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: IndexAccess {
+                    collection: Variable(
+                        "user",
+                        116,
+                        14,
+                    ),
+                    index: Literal(
+                        String(
+                            "id",
+                        ),
+                        116,
+                        19,
+                    ),
+                    line: 116,
+                    column: 18,
+                },
+                operator: Equals,
+                right: Variable(
+                    "author_id",
+                    116,
+                    37,
+                ),
+                line: 116,
+                column: 25,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            Boolean(
+                                true,
+                            ),
+                            117,
+                            16,
+                        ),
+                    ),
+                    line: 117,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 116,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Literal(
+                    Boolean(
+                        false,
+                    ),
+                    119,
+                    12,
+                ),
+            ),
+            line: 119,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 120,
+    column: 11,
+}
+
+Statement #11: ActionDefinition {
+    name: "session_cookie",
+    parameters: [
+        Parameter {
+            name: "sid",
+            param_type: None,
+            default_value: None,
+            line: 124,
+            column: 53,
+        },
+    ],
+    body: [
+        ReturnStatement {
+            value: Some(
+                Concatenation {
+                    left: Literal(
+                        String(
+                            "sid=",
+                        ),
+                        125,
+                        12,
+                    ),
+                    right: Concatenation {
+                        left: Variable(
+                            "sid",
+                            125,
+                            24,
+                        ),
+                        right: Literal(
+                            String(
+                                "; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800",
+                            ),
+                            125,
+                            33,
+                        ),
+                        line: 125,
+                        column: 28,
+                    },
+                    line: 125,
+                    column: 19,
+                },
+            ),
+            line: 125,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 126,
+    column: 11,
+}
+

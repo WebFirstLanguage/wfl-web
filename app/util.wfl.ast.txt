@@ -1,0 +1,1563 @@
+AST output for: app/util.wfl
+==============================================
+
+Program with 7 statements:
+
+Statement #1: ActionDefinition {
+    name: "slugify",
+    parameters: [
+        Parameter {
+            name: "raw_title",
+            param_type: None,
+            default_value: None,
+            line: 14,
+            column: 46,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "lowered",
+            value: FunctionCall {
+                function: Variable(
+                    "tolowercase",
+                    15,
+                    22,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "raw_title",
+                            15,
+                            37,
+                        ),
+                    },
+                ],
+                line: 15,
+                column: 34,
+            },
+            is_constant: false,
+            line: 15,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "allowed",
+            value: Literal(
+                String(
+                    "abcdefghijklmnopqrstuvwxyz0123456789",
+                ),
+                16,
+                22,
+            ),
+            is_constant: false,
+            line: 16,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "n",
+            value: FunctionCall {
+                function: Variable(
+                    "length",
+                    17,
+                    16,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "lowered",
+                            17,
+                            26,
+                        ),
+                    },
+                ],
+                line: 17,
+                column: 23,
+            },
+            is_constant: false,
+            line: 17,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "result_slug",
+            value: Literal(
+                String(
+                    "",
+                ),
+                18,
+                26,
+            ),
+            is_constant: false,
+            line: 18,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "last_was_dash",
+            value: Literal(
+                Boolean(
+                    true,
+                ),
+                19,
+                28,
+            ),
+            is_constant: false,
+            line: 19,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "n",
+                    20,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Integer(
+                        0,
+                    ),
+                    20,
+                    28,
+                ),
+                line: 20,
+                column: 16,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            String(
+                                "",
+                            ),
+                            21,
+                            16,
+                        ),
+                    ),
+                    line: 21,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 20,
+            column: 5,
+        },
+        CountLoop {
+            start: Literal(
+                Integer(
+                    0,
+                ),
+                23,
+                16,
+            ),
+            end: BinaryOperation {
+                left: Variable(
+                    "n",
+                    23,
+                    21,
+                ),
+                operator: Minus,
+                right: Literal(
+                    Integer(
+                        1,
+                    ),
+                    23,
+                    29,
+                ),
+                line: 23,
+                column: 23,
+            },
+            step: None,
+            downward: false,
+            variable_name: None,
+            body: [
+                VariableDeclaration {
+                    name: "ch",
+                    value: FunctionCall {
+                        function: Variable(
+                            "substring",
+                            24,
+                            21,
+                        ),
+                        arguments: [
+                            Argument {
+                                name: None,
+                                value: Variable(
+                                    "lowered",
+                                    24,
+                                    34,
+                                ),
+                            },
+                            Argument {
+                                name: None,
+                                value: Variable(
+                                    "count",
+                                    24,
+                                    46,
+                                ),
+                            },
+                            Argument {
+                                name: None,
+                                value: Literal(
+                                    Integer(
+                                        1,
+                                    ),
+                                    24,
+                                    56,
+                                ),
+                            },
+                        ],
+                        line: 24,
+                        column: 31,
+                    },
+                    is_constant: false,
+                    line: 24,
+                    column: 9,
+                },
+                IfStatement {
+                    condition: FunctionCall {
+                        function: Variable(
+                            "contains",
+                            25,
+                            18,
+                        ),
+                        arguments: [
+                            Argument {
+                                name: None,
+                                value: Variable(
+                                    "allowed",
+                                    25,
+                                    30,
+                                ),
+                            },
+                            Argument {
+                                name: None,
+                                value: Variable(
+                                    "ch",
+                                    25,
+                                    42,
+                                ),
+                            },
+                        ],
+                        line: 25,
+                        column: 27,
+                    },
+                    then_block: [
+                        Assignment {
+                            name: "result_slug",
+                            value: Concatenation {
+                                left: Variable(
+                                    "result_slug",
+                                    26,
+                                    35,
+                                ),
+                                right: Variable(
+                                    "ch",
+                                    26,
+                                    52,
+                                ),
+                                line: 26,
+                                column: 47,
+                            },
+                            line: 26,
+                            column: 54,
+                        },
+                        Assignment {
+                            name: "last_was_dash",
+                            value: Literal(
+                                Boolean(
+                                    false,
+                                ),
+                                27,
+                                37,
+                            ),
+                            line: 27,
+                            column: 39,
+                        },
+                    ],
+                    else_block: Some(
+                        [
+                            IfStatement {
+                                condition: BinaryOperation {
+                                    left: Variable(
+                                        "last_was_dash",
+                                        29,
+                                        22,
+                                    ),
+                                    operator: Equals,
+                                    right: Literal(
+                                        Boolean(
+                                            false,
+                                        ),
+                                        29,
+                                        48,
+                                    ),
+                                    line: 29,
+                                    column: 36,
+                                },
+                                then_block: [
+                                    Assignment {
+                                        name: "result_slug",
+                                        value: Concatenation {
+                                            left: Variable(
+                                                "result_slug",
+                                                30,
+                                                39,
+                                            ),
+                                            right: Literal(
+                                                String(
+                                                    "-",
+                                                ),
+                                                30,
+                                                56,
+                                            ),
+                                            line: 30,
+                                            column: 51,
+                                        },
+                                        line: 30,
+                                        column: 59,
+                                    },
+                                    Assignment {
+                                        name: "last_was_dash",
+                                        value: Literal(
+                                            Boolean(
+                                                true,
+                                            ),
+                                            31,
+                                            41,
+                                        ),
+                                        line: 31,
+                                        column: 44,
+                                    },
+                                ],
+                                else_block: None,
+                                line: 29,
+                                column: 13,
+                            },
+                        ],
+                    ),
+                    line: 25,
+                    column: 9,
+                },
+            ],
+            line: 34,
+            column: 14,
+        },
+        VariableDeclaration {
+            name: "slug_len",
+            value: FunctionCall {
+                function: Variable(
+                    "length",
+                    36,
+                    23,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "result_slug",
+                            36,
+                            33,
+                        ),
+                    },
+                ],
+                line: 36,
+                column: 30,
+            },
+            is_constant: false,
+            line: 36,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "slug_len",
+                    37,
+                    14,
+                ),
+                operator: GreaterThan,
+                right: Literal(
+                    Integer(
+                        0,
+                    ),
+                    37,
+                    39,
+                ),
+                line: 37,
+                column: 23,
+            },
+            then_block: [
+                VariableDeclaration {
+                    name: "tail",
+                    value: FunctionCall {
+                        function: Variable(
+                            "substring",
+                            38,
+                            23,
+                        ),
+                        arguments: [
+                            Argument {
+                                name: None,
+                                value: Variable(
+                                    "result_slug",
+                                    38,
+                                    36,
+                                ),
+                            },
+                            Argument {
+                                name: None,
+                                value: BinaryOperation {
+                                    left: Variable(
+                                        "slug_len",
+                                        38,
+                                        52,
+                                    ),
+                                    operator: Minus,
+                                    right: Literal(
+                                        Integer(
+                                            1,
+                                        ),
+                                        38,
+                                        67,
+                                    ),
+                                    line: 38,
+                                    column: 61,
+                                },
+                            },
+                            Argument {
+                                name: None,
+                                value: Literal(
+                                    Integer(
+                                        1,
+                                    ),
+                                    38,
+                                    73,
+                                ),
+                            },
+                        ],
+                        line: 38,
+                        column: 33,
+                    },
+                    is_constant: false,
+                    line: 38,
+                    column: 9,
+                },
+                IfStatement {
+                    condition: BinaryOperation {
+                        left: Variable(
+                            "tail",
+                            39,
+                            18,
+                        ),
+                        operator: Equals,
+                        right: Literal(
+                            String(
+                                "-",
+                            ),
+                            39,
+                            35,
+                        ),
+                        line: 39,
+                        column: 23,
+                    },
+                    then_block: [
+                        Assignment {
+                            name: "result_slug",
+                            value: FunctionCall {
+                                function: Variable(
+                                    "substring",
+                                    40,
+                                    35,
+                                ),
+                                arguments: [
+                                    Argument {
+                                        name: None,
+                                        value: Variable(
+                                            "result_slug",
+                                            40,
+                                            48,
+                                        ),
+                                    },
+                                    Argument {
+                                        name: None,
+                                        value: Literal(
+                                            Integer(
+                                                0,
+                                            ),
+                                            40,
+                                            64,
+                                        ),
+                                    },
+                                    Argument {
+                                        name: None,
+                                        value: BinaryOperation {
+                                            left: Variable(
+                                                "slug_len",
+                                                40,
+                                                70,
+                                            ),
+                                            operator: Minus,
+                                            right: Literal(
+                                                Integer(
+                                                    1,
+                                                ),
+                                                40,
+                                                85,
+                                            ),
+                                            line: 40,
+                                            column: 79,
+                                        },
+                                    },
+                                ],
+                                line: 40,
+                                column: 45,
+                            },
+                            line: 40,
+                            column: 86,
+                        },
+                    ],
+                    else_block: None,
+                    line: 39,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 37,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Variable(
+                    "result_slug",
+                    43,
+                    12,
+                ),
+            ),
+            line: 43,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 44,
+    column: 11,
+}
+
+Statement #2: ActionDefinition {
+    name: "map_has",
+    parameters: [
+        Parameter {
+            name: "obj",
+            param_type: None,
+            default_value: None,
+            line: 47,
+            column: 46,
+        },
+        Parameter {
+            name: "the_key",
+            param_type: None,
+            default_value: None,
+            line: 47,
+            column: 54,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "has_key",
+            value: Literal(
+                Boolean(
+                    false,
+                ),
+                48,
+                22,
+            ),
+            is_constant: false,
+            line: 48,
+            column: 5,
+        },
+        TryStatement {
+            body: [
+                VariableDeclaration {
+                    name: "probe",
+                    value: IndexAccess {
+                        collection: Variable(
+                            "obj",
+                            50,
+                            24,
+                        ),
+                        index: Variable(
+                            "the_key",
+                            50,
+                            28,
+                        ),
+                        line: 50,
+                        column: 27,
+                    },
+                    is_constant: false,
+                    line: 50,
+                    column: 9,
+                },
+                IfStatement {
+                    condition: BinaryOperation {
+                        left: Variable(
+                            "probe",
+                            51,
+                            18,
+                        ),
+                        operator: NotEquals,
+                        right: Literal(
+                            Nothing,
+                            51,
+                            31,
+                        ),
+                        line: 51,
+                        column: 24,
+                    },
+                    then_block: [
+                        Assignment {
+                            name: "has_key",
+                            value: Literal(
+                                Boolean(
+                                    true,
+                                ),
+                                52,
+                                31,
+                            ),
+                            line: 52,
+                            column: 34,
+                        },
+                    ],
+                    else_block: None,
+                    line: 51,
+                    column: 9,
+                },
+            ],
+            when_clauses: [
+                WhenClause {
+                    error_type: General,
+                    error_name: "error",
+                    body: [
+                        Assignment {
+                            name: "has_key",
+                            value: Literal(
+                                Boolean(
+                                    false,
+                                ),
+                                55,
+                                27,
+                            ),
+                            line: 55,
+                            column: 29,
+                        },
+                    ],
+                },
+            ],
+            otherwise_block: None,
+            finally_block: None,
+            line: 49,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Variable(
+                    "has_key",
+                    57,
+                    12,
+                ),
+            ),
+            line: 57,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 58,
+    column: 11,
+}
+
+Statement #3: ActionDefinition {
+    name: "field_or",
+    parameters: [
+        Parameter {
+            name: "obj",
+            param_type: None,
+            default_value: None,
+            line: 63,
+            column: 47,
+        },
+        Parameter {
+            name: "the_key",
+            param_type: None,
+            default_value: None,
+            line: 63,
+            column: 55,
+        },
+        Parameter {
+            name: "fallback",
+            param_type: None,
+            default_value: None,
+            line: 63,
+            column: 67,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "result_value",
+            value: Variable(
+                "fallback",
+                64,
+                27,
+            ),
+            is_constant: false,
+            line: 64,
+            column: 5,
+        },
+        TryStatement {
+            body: [
+                VariableDeclaration {
+                    name: "raw_value",
+                    value: IndexAccess {
+                        collection: Variable(
+                            "obj",
+                            66,
+                            28,
+                        ),
+                        index: Variable(
+                            "the_key",
+                            66,
+                            32,
+                        ),
+                        line: 66,
+                        column: 31,
+                    },
+                    is_constant: false,
+                    line: 66,
+                    column: 9,
+                },
+                IfStatement {
+                    condition: BinaryOperation {
+                        left: Variable(
+                            "raw_value",
+                            67,
+                            18,
+                        ),
+                        operator: NotEquals,
+                        right: Literal(
+                            Nothing,
+                            67,
+                            35,
+                        ),
+                        line: 67,
+                        column: 28,
+                    },
+                    then_block: [
+                        Assignment {
+                            name: "result_value",
+                            value: Variable(
+                                "raw_value",
+                                68,
+                                36,
+                            ),
+                            line: 68,
+                            column: 45,
+                        },
+                    ],
+                    else_block: None,
+                    line: 67,
+                    column: 9,
+                },
+            ],
+            when_clauses: [
+                WhenClause {
+                    error_type: General,
+                    error_name: "error",
+                    body: [
+                        Assignment {
+                            name: "result_value",
+                            value: Variable(
+                                "fallback",
+                                71,
+                                32,
+                            ),
+                            line: 71,
+                            column: 40,
+                        },
+                    ],
+                },
+            ],
+            otherwise_block: None,
+            finally_block: None,
+            line: 65,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Variable(
+                    "result_value",
+                    73,
+                    12,
+                ),
+            ),
+            line: 73,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 74,
+    column: 11,
+}
+
+Statement #4: ActionDefinition {
+    name: "to_int",
+    parameters: [
+        Parameter {
+            name: "raw_text",
+            param_type: None,
+            default_value: None,
+            line: 78,
+            column: 45,
+        },
+        Parameter {
+            name: "fallback",
+            param_type: None,
+            default_value: None,
+            line: 78,
+            column: 58,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "result_num",
+            value: Variable(
+                "fallback",
+                79,
+                25,
+            ),
+            is_constant: false,
+            line: 79,
+            column: 5,
+        },
+        TryStatement {
+            body: [
+                VariableDeclaration {
+                    name: "parsed",
+                    value: FunctionCall {
+                        function: Variable(
+                            "parse_json",
+                            81,
+                            25,
+                        ),
+                        arguments: [
+                            Argument {
+                                name: None,
+                                value: Variable(
+                                    "raw_text",
+                                    81,
+                                    39,
+                                ),
+                            },
+                        ],
+                        line: 81,
+                        column: 36,
+                    },
+                    is_constant: false,
+                    line: 81,
+                    column: 9,
+                },
+                IfStatement {
+                    condition: BinaryOperation {
+                        left: FunctionCall {
+                            function: Variable(
+                                "typeof",
+                                82,
+                                19,
+                            ),
+                            arguments: [
+                                Argument {
+                                    name: None,
+                                    value: Variable(
+                                        "parsed",
+                                        82,
+                                        29,
+                                    ),
+                                },
+                            ],
+                            line: 82,
+                            column: 26,
+                        },
+                        operator: Equals,
+                        right: Literal(
+                            String(
+                                "Number",
+                            ),
+                            82,
+                            49,
+                        ),
+                        line: 82,
+                        column: 37,
+                    },
+                    then_block: [
+                        Assignment {
+                            name: "result_num",
+                            value: Variable(
+                                "parsed",
+                                83,
+                                34,
+                            ),
+                            line: 83,
+                            column: 40,
+                        },
+                    ],
+                    else_block: None,
+                    line: 82,
+                    column: 9,
+                },
+            ],
+            when_clauses: [
+                WhenClause {
+                    error_type: General,
+                    error_name: "error",
+                    body: [
+                        Assignment {
+                            name: "result_num",
+                            value: Variable(
+                                "fallback",
+                                86,
+                                30,
+                            ),
+                            line: 86,
+                            column: 38,
+                        },
+                    ],
+                },
+            ],
+            otherwise_block: None,
+            finally_block: None,
+            line: 80,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Variable(
+                    "result_num",
+                    88,
+                    12,
+                ),
+            ),
+            line: 88,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 89,
+    column: 11,
+}
+
+Statement #5: ActionDefinition {
+    name: "file_ext",
+    parameters: [
+        Parameter {
+            name: "file_name",
+            param_type: None,
+            default_value: None,
+            line: 94,
+            column: 47,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "dot_pos",
+            value: FunctionCall {
+                function: Variable(
+                    "last_index_of",
+                    95,
+                    22,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "file_name",
+                            95,
+                            39,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Literal(
+                            String(
+                                ".",
+                            ),
+                            95,
+                            53,
+                        ),
+                    },
+                ],
+                line: 95,
+                column: 36,
+            },
+            is_constant: false,
+            line: 95,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "dot_pos",
+                    96,
+                    14,
+                ),
+                operator: LessThan,
+                right: Literal(
+                    Integer(
+                        1,
+                    ),
+                    96,
+                    35,
+                ),
+                line: 96,
+                column: 22,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            String(
+                                "",
+                            ),
+                            97,
+                            16,
+                        ),
+                    ),
+                    line: 97,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 96,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "name_len",
+            value: FunctionCall {
+                function: Variable(
+                    "length",
+                    99,
+                    23,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "file_name",
+                            99,
+                            33,
+                        ),
+                    },
+                ],
+                line: 99,
+                column: 30,
+            },
+            is_constant: false,
+            line: 99,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "dot_pos",
+                    100,
+                    14,
+                ),
+                operator: Equals,
+                right: BinaryOperation {
+                    left: Variable(
+                        "name_len",
+                        100,
+                        34,
+                    ),
+                    operator: Minus,
+                    right: Literal(
+                        Integer(
+                            1,
+                        ),
+                        100,
+                        49,
+                    ),
+                    line: 100,
+                    column: 43,
+                },
+                line: 100,
+                column: 22,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Literal(
+                            String(
+                                "",
+                            ),
+                            101,
+                            16,
+                        ),
+                    ),
+                    line: 101,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 100,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "raw_ext",
+            value: FunctionCall {
+                function: Variable(
+                    "substring",
+                    103,
+                    22,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "file_name",
+                            103,
+                            35,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: BinaryOperation {
+                            left: Variable(
+                                "dot_pos",
+                                103,
+                                49,
+                            ),
+                            operator: Plus,
+                            right: Literal(
+                                Integer(
+                                    1,
+                                ),
+                                103,
+                                62,
+                            ),
+                            line: 103,
+                            column: 57,
+                        },
+                    },
+                    Argument {
+                        name: None,
+                        value: BinaryOperation {
+                            left: BinaryOperation {
+                                left: Variable(
+                                    "name_len",
+                                    103,
+                                    69,
+                                ),
+                                operator: Minus,
+                                right: Variable(
+                                    "dot_pos",
+                                    103,
+                                    84,
+                                ),
+                                line: 103,
+                                column: 78,
+                            },
+                            operator: Minus,
+                            right: Literal(
+                                Integer(
+                                    1,
+                                ),
+                                103,
+                                98,
+                            ),
+                            line: 103,
+                            column: 92,
+                        },
+                    },
+                ],
+                line: 103,
+                column: 32,
+            },
+            is_constant: false,
+            line: 103,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                FunctionCall {
+                    function: Variable(
+                        "tolowercase",
+                        104,
+                        12,
+                    ),
+                    arguments: [
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "raw_ext",
+                                104,
+                                27,
+                            ),
+                        },
+                    ],
+                    line: 104,
+                    column: 24,
+                },
+            ),
+            line: 104,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 105,
+    column: 11,
+}
+
+Statement #6: ActionDefinition {
+    name: "file_stem",
+    parameters: [
+        Parameter {
+            name: "file_name",
+            param_type: None,
+            default_value: None,
+            line: 109,
+            column: 48,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "dot_pos",
+            value: FunctionCall {
+                function: Variable(
+                    "last_index_of",
+                    110,
+                    22,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "file_name",
+                            110,
+                            39,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Literal(
+                            String(
+                                ".",
+                            ),
+                            110,
+                            53,
+                        ),
+                    },
+                ],
+                line: 110,
+                column: 36,
+            },
+            is_constant: false,
+            line: 110,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "dot_pos",
+                    111,
+                    14,
+                ),
+                operator: LessThan,
+                right: Literal(
+                    Integer(
+                        1,
+                    ),
+                    111,
+                    35,
+                ),
+                line: 111,
+                column: 22,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Variable(
+                            "file_name",
+                            112,
+                            16,
+                        ),
+                    ),
+                    line: 112,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 111,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "name_len",
+            value: FunctionCall {
+                function: Variable(
+                    "length",
+                    114,
+                    23,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "file_name",
+                            114,
+                            33,
+                        ),
+                    },
+                ],
+                line: 114,
+                column: 30,
+            },
+            is_constant: false,
+            line: 114,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "dot_pos",
+                    115,
+                    14,
+                ),
+                operator: Equals,
+                right: BinaryOperation {
+                    left: Variable(
+                        "name_len",
+                        115,
+                        34,
+                    ),
+                    operator: Minus,
+                    right: Literal(
+                        Integer(
+                            1,
+                        ),
+                        115,
+                        49,
+                    ),
+                    line: 115,
+                    column: 43,
+                },
+                line: 115,
+                column: 22,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Variable(
+                            "file_name",
+                            116,
+                            16,
+                        ),
+                    ),
+                    line: 116,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 115,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                FunctionCall {
+                    function: Variable(
+                        "substring",
+                        118,
+                        12,
+                    ),
+                    arguments: [
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "file_name",
+                                118,
+                                25,
+                            ),
+                        },
+                        Argument {
+                            name: None,
+                            value: Literal(
+                                Integer(
+                                    0,
+                                ),
+                                118,
+                                39,
+                            ),
+                        },
+                        Argument {
+                            name: None,
+                            value: Variable(
+                                "dot_pos",
+                                118,
+                                45,
+                            ),
+                        },
+                    ],
+                    line: 118,
+                    column: 22,
+                },
+            ),
+            line: 118,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 119,
+    column: 11,
+}
+
+Statement #7: ActionDefinition {
+    name: "truncate_text",
+    parameters: [
+        Parameter {
+            name: "source_text",
+            param_type: None,
+            default_value: None,
+            line: 122,
+            column: 52,
+        },
+        Parameter {
+            name: "max_len",
+            param_type: None,
+            default_value: None,
+            line: 122,
+            column: 68,
+        },
+    ],
+    body: [
+        VariableDeclaration {
+            name: "source_len",
+            value: FunctionCall {
+                function: Variable(
+                    "length",
+                    123,
+                    25,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "source_text",
+                            123,
+                            35,
+                        ),
+                    },
+                ],
+                line: 123,
+                column: 32,
+            },
+            is_constant: false,
+            line: 123,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "source_len",
+                    124,
+                    14,
+                ),
+                operator: LessThanOrEqual,
+                right: Variable(
+                    "max_len",
+                    124,
+                    50,
+                ),
+                line: 124,
+                column: 25,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Variable(
+                            "source_text",
+                            125,
+                            16,
+                        ),
+                    ),
+                    line: 125,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 124,
+            column: 5,
+        },
+        VariableDeclaration {
+            name: "cut",
+            value: FunctionCall {
+                function: Variable(
+                    "substring",
+                    127,
+                    18,
+                ),
+                arguments: [
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "source_text",
+                            127,
+                            31,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Literal(
+                            Integer(
+                                0,
+                            ),
+                            127,
+                            47,
+                        ),
+                    },
+                    Argument {
+                        name: None,
+                        value: Variable(
+                            "max_len",
+                            127,
+                            53,
+                        ),
+                    },
+                ],
+                line: 127,
+                column: 28,
+            },
+            is_constant: false,
+            line: 127,
+            column: 5,
+        },
+        ReturnStatement {
+            value: Some(
+                Concatenation {
+                    left: Variable(
+                        "cut",
+                        128,
+                        12,
+                    ),
+                    right: Literal(
+                        String(
+                            "…",
+                        ),
+                        128,
+                        21,
+                    ),
+                    line: 128,
+                    column: 16,
+                },
+            ),
+            line: 128,
+            column: 5,
+        },
+    ],
+    return_type: None,
+    line: 129,
+    column: 11,
+}
+

@@ -5,19 +5,22 @@
 // build.wfl (static: render once, write to public/) and serve.wfl (dynamic:
 // render on each request) call into it, so the two never drift.
 //
-// It is actions-only (no top-level side effects). The caller must have already
-// pulled in the engine and helpers it depends on:
-//     include from "lib/scribe.wfl"     (scribe_render_file)
-//     include from "lib/highlight.wfl"  (wfl_code_block, plain_code_block)
-//     include from "lib/icons.wfl"      (svg_icon)
+// It is actions-only (no top-level side effects). It pulls in everything it and
+// its callers need, each dependency exactly once, forming one linear include
+// spine (see main.wfl for why the app avoids a flat include list):
+//   * render.wfl — the Scriptorium engine (render -> auth -> db -> util) and,
+//     through render, the vendored Scribe engine (scribe_render_file).
+//   * highlight.wfl — wfl_code_block / plain_code_block.
+//   * icons.wfl — svg_icon.
 //
 // Public:
 //     site_render of page_route and served_note   -> HTML text, or "" for an
 //                                                unknown page_route (caller 404s)
 //     site_template_for of page_route             -> template path, or ""
+//     marketing_context / build_shared            -> context maps for templates
 // ============================================================================
 
-include from "scribe.wfl"
+include from "../app/render.wfl"
 include from "highlight.wfl"
 include from "icons.wfl"
 
@@ -124,10 +127,11 @@ Hello, World!"
     // Navigation.
     create list nav_links:
     end list
-    push with nav_links and (mk_link of "Docs" and "getting-started.html")
-    push with nav_links and (mk_link of "Playground" and "playground.html")
-    push with nav_links and (mk_link of "Features" and "index.html#features")
-    push with nav_links and (mk_link of "Compare" and "index.html#read-it")
+    push with nav_links and (mk_link of "Docs" and "/getting-started")
+    push with nav_links and (mk_link of "Playground" and "/playground")
+    push with nav_links and (mk_link of "News" and "/news")
+    push with nav_links and (mk_link of "Features" and "/#features")
+    push with nav_links and (mk_link of "Compare" and "/#read-it")
 
     store hero_meta as ["No frameworks", "Built-in web server", "Open source · Apache 2.0"]
 
@@ -144,10 +148,10 @@ Hello, World!"
     // Footer columns.
     create list learn_links:
     end list
-    push with learn_links and (mk_link of "Introduction" and "getting-started.html")
-    push with learn_links and (mk_link of "Getting started" and "getting-started.html")
-    push with learn_links and (mk_link of "Language basics" and "getting-started.html")
-    push with learn_links and (mk_link of "Advanced features" and "getting-started.html")
+    push with learn_links and (mk_link of "Introduction" and "/getting-started")
+    push with learn_links and (mk_link of "Getting started" and "/getting-started")
+    push with learn_links and (mk_link of "Language basics" and "/getting-started")
+    push with learn_links and (mk_link of "Advanced features" and "/getting-started")
 
     create list ref_links:
     end list
@@ -195,7 +199,7 @@ end action
 // Every page receives the full data model plus its own title/description and
 // the "served_note" (how this page was produced). Extra keys are harmless.
 
-define action called site_context with parameters page_route and served_note:
+define action called marketing_context with parameters page_route and served_note:
     store s as build_shared of "x"
 
     store the_title as "WFL — Programming that reads like plain English"
@@ -257,6 +261,6 @@ define action called site_render with parameters page_route and served_note:
     check if tpl is "":
         return ""
     end check
-    store ctx as site_context of page_route and served_note
+    store ctx as marketing_context of page_route and served_note
     return scribe_render_file of tpl and ctx
 end action

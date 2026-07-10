@@ -13,6 +13,10 @@
 // highlighter). Every cross-file action takes at least one argument, because a
 // zero-argument action can't be called across included files in WFL.
 //
+// This module sits near the top of the app's single include spine: it pulls in
+// site.wfl, which in turn pulls in the engine (render -> auth -> db -> util,
+// scribe), the highlighter and the icons. Nothing is included twice.
+//
 // Public:  playground_render of tool and user_input and served_note  -> HTML
 // ============================================================================
 
