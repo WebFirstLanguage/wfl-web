@@ -1,146 +1,146 @@
 # wfl-web
 
-**The WFL website — written in WFL.**
+**The WFL website — written in WFL, powered by Scriptorium.**
 
 This is the marketing + docs site for [WFL, the WebFirst Language](https://github.com/WebFirstLanguage/wfl),
-and it is written in WFL. The pipeline is WFL end to end: WFL data, the
-[Scribe](https://github.com/WebFirstLanguage/scribe) templating engine (itself
-written in WFL), and a WFL-native syntax highlighter that colors the site's own
-code samples. The visual language — colors, type, spacing, the logo — comes
-straight from the **WFL Design System**.
+and it is written in WFL end to end. It runs on the
+[Scriptorium](https://github.com/WebFirstLanguage/scriptorium) CMS engine
+(vendored into this repo): one WFL web server opens a SQLite database, serves the
+public site, and hosts a login-protected `/admin` panel. Pages are rendered with
+the [Scribe](https://github.com/WebFirstLanguage/scribe) templating engine, code
+samples are colored by a WFL-native syntax highlighter, and the whole thing wears
+the **WFL Design System** (dark, teal-on-Ink).
 
 > Programming that reads like plain English — including the program that serves
-> this page.
+> this page, stores its News posts, and runs its playground.
 
-## Two ways to run it
+## Run it
 
-The pages, data, and routing live in one shared module (`lib/site.wfl`), so the
-same site renders either way — they never drift:
+You need the `wfl` CLI ([build it](https://github.com/WebFirstLanguage/wfl) with
+`cargo build --release`). Then, **from the repository root** (template and asset
+paths resolve relative to the working directory):
 
-| | Command | What it does |
+```sh
+wfl main.wfl          # or: scripts/run.sh
+```
+
+On first run it creates `scriptorium.db`, seeds default settings, prints a
+**one-time admin password**, and seeds a few launch **News** posts:
+
+```text
+==================================================
+ wfl-web — first run: seeded an admin account
+   username:  admin
+   password:  <generated-password>   # a fresh random value is printed here
+   (shown once — sign in at /admin and add users under Users)
+==================================================
+wfl-web — seeded 3 launch News posts.
+wfl-web (powered by Scriptorium) is running at http://127.0.0.1:8080  (admin: /admin)
+```
+
+Open <http://127.0.0.1:8080/> for the site and <http://127.0.0.1:8080/admin> to
+sign in. Bind address, TLS, and the body-size cap live in `.wflcfg`; the server
+listens on `127.0.0.1:8080` by default (set `web_server_bind_address = 0.0.0.0`
+to expose it behind a reverse proxy).
+
+## How the site is put together
+
+The site is a **hybrid**: rich, hand-authored pages for the marketing/docs
+surface, and genuine CMS content for anything that changes over time.
+
+- **Rich pages are HTML, not markdown**, so they stay custom routes rendered from
+  this repo's own templates via `lib/site.wfl` and `lib/playground.wfl`: the
+  landing page (hero, language compare, feature grid, error showcase), the
+  getting-started docs page, the live playground, and the 404.
+- **The News section is Scriptorium CMS content** — SQLite-backed posts, authored
+  and edited in `/admin`, served at `/news` and `/post/:slug`. It's the same
+  blog engine Scriptorium ships; here it powers project announcements.
+
+Both surfaces render through the **same** `templates/base.html`, so News and the
+marketing pages share one nav, footer, and design system — they never look like
+two different sites.
+
+## Routes
+
+| Method | Path | What |
 | --- | --- | --- |
-| **Static** | `wfl build.wfl` | Renders every page once and writes `public/*.html`. Deploy the `public/` folder anywhere (GitHub Pages, Netlify, any static host). |
-| **Live** | `wfl serve.wfl` | Starts a WFL web server on `:8080` and renders each page **on every request** — like PHP, but in plain-English WFL. Assets stream from `public/assets`. |
+| GET | `/` | Landing page (hero, compare, features, errors, install) |
+| GET | `/getting-started` | Getting-started docs |
+| GET/POST | `/playground` | The live playground (see below); POST runs a tool |
+| GET | `/news` · `/news/page/:n` | News feed (paginated) |
+| GET | `/post/:slug` | A published News post |
+| GET | `/page/:slug` | A published CMS page |
+| GET | `/assets/*` | Static files (design system, uploads) → `static/` |
+| GET/POST | `/admin/login` · `/admin/logout` | Auth |
+| GET | `/admin` | Dashboard |
+| GET/POST | `/admin/posts…` · `/admin/pages…` · `/admin/media…` | Content CRUD |
+| GET/POST | `/admin/users…` · `/admin/settings` | Users & settings *(admin only)* |
+| — | (any miss) | Rich 404 |
 
-**Which should you use?** For a page whose content doesn't change per visitor,
-**static** is best — nothing runs at request time and any CDN can cache it. Go
-**live** when a page needs per-request data: form posts, sessions or auth, a
-database, the current time, or anything personalized. The **playground** is
-exactly that page — see below.
+Every admin POST carries the session's CSRF token; the public playground POST is
+outside that gate (it's a public form, not an admin action).
 
 ## The playground — WFL flexing on itself
 
-`/playground` is the point of running live: it is a page *about* WFL that is
-*running* WFL on every request. Open it under `wfl serve.wfl` and:
+`/playground` is a page *about* WFL that is *running* WFL on every request:
 
 - **Three real programs execute on each load.** `playground/examples/*.wfl`
   (FizzBuzz, Fibonacci, primes) are read, highlighted, and run with
   `execute wfl file … and read output` — the output you see is whatever the
-  program just displayed, computed at request time, not baked in.
+  program just displayed, computed at request time. A broken example can't take
+  the server down; `execute wfl file` turns its error into a catchable one.
 - **Interactive tools compute on your input**, server-side, with the standard
   library: **WFLHASH-256 + SHA-256** (crypto), **text stats** (length, words,
-  uppercase, reverse), and **email validation** using the readable pattern
-  engine. You submit a form; WFL parses it (`parse_form_urlencoded`), computes,
-  and re-renders the page with the answer.
-- **A live heartbeat** in the header and footer shows the request number and the
-  server clock (`now`), so you can watch it change on every refresh.
+  uppercase, reverse), and **email validation** with the readable pattern engine.
+  You submit a form; WFL parses it (`parse_form_urlencoded`), computes, and
+  re-renders the page with the answer.
 
-A broken example can't take the server down — `execute wfl file` turns any error
-in the child program into a catchable one. On a static host the examples are
-frozen at build time and the input tools are inert (they need the live server);
-the page says so.
+## How it loads — one include spine
 
-## What's here
-
-| Page | Route | Source template | Static output |
-| --- | --- | --- | --- |
-| Landing (hero, compare, features, errors, install) | `/` | `templates/index.html` | `public/index.html` |
-| Getting started (docs) | `/getting-started` | `templates/getting-started.html` | `public/getting-started.html` |
-| **Playground (live WFL)** | `/playground` | `templates/playground.html` | `public/playground.html` |
-| Not found | (any miss) | `templates/404.html` | `public/404.html` |
-
-## How it's built
+The whole app loads through a single `include` in `main.wfl`. WFL analyses each
+included file against the scope that exists when it is included, and rejects a
+call to an action an *earlier* include already executed — so the modules form one
+linear spine, each pulling in its own dependencies exactly once (no shared
+dependency is included from two branches, which WFL would treat as a
+redefinition):
 
 ```
-lib/site.wfl                       # the shared model: content, routing, rendering
- ├─ include scribe.wfl             #   the Scribe templating engine (vendored, pure WFL)
- ├─ include highlight.wfl          #   WFL → highlighted HTML
- ├─ include icons.wfl              #   inline Lucide-style SVG icons
- └─ site_render of route ...       #   build a context of plain maps + lists → render
-
-build.wfl   →  site_render "/" , "/getting-started", "/404"  →  write public/*.html
-serve.wfl   →  listen on port 8080; per request: site_render <route>  →  respond
+main.wfl
+└─ lib/playground.wfl          # live playground: run examples + compute on input
+   └─ lib/site.wfl             # marketing content, routing, code samples
+      ├─ app/render.wfl        # Scriptorium engine …
+      │  ├─ auth.wfl           #   sessions, CSRF, roles
+      │  │  └─ db.wfl          #   SQLite schema + queries
+      │  │     └─ util.wfl     #   slugify, to_int, field_or, …
+      │  └─ lib/scribe.wfl     #   Scribe templating engine (vendored)
+      ├─ lib/highlight.wfl     # WFL → highlighted HTML
+      └─ lib/icons.wfl         # inline Lucide-style SVG icons
 ```
-
-Both entry points call the same `site_render` — `build.wfl` writes the result to
-disk, `serve.wfl` responds with it live. The little footer line ("Generated as
-static HTML…" vs "Rendered live by WFL…") is the only difference in the output,
-so you can tell which one served a page.
 
 The templates use Scribe's Twig-style syntax: `{% extends %}` / `{% block %}`
-inheritance from `templates/base.html`, `{% include %}` for the shared nav and
-footer partials, `{% for %}` loops over the nav links / feature cards / footer
-columns, and `{{ value | raw }}` to emit trusted, pre-highlighted code HTML.
+inheritance from `templates/base.html`, `{% include %}` for the nav and footer
+partials, `{% for %}` loops, the `markdown` filter for post/page bodies, and
+`{{ value | raw }}` to emit trusted, pre-highlighted code HTML.
 
-Every code sample on the site is colored by `lib/highlight.wfl` — a port of the
-design system's `CodeBlock` token→color map into WFL. WFL keywords become teal,
-strings amber, comments muted, exactly per the brand syntax theme. Nothing is
-highlighted in the browser; WFL does it.
-
-`serve.wfl` also streams the static assets: it reads `public/assets/*` (CSS,
-the self-hosted Alegreya fonts, the SVG logo) with `read binary` and picks the
-`Content-Type` from the file name via WFL's `mime_type` helper. Requests are
-path-validated (`..` is rejected) before any file is opened.
-
-## Build it yourself
-
-You need the `wfl` CLI ([build it](https://github.com/WebFirstLanguage/wfl) with
-`cargo build --release`). Everything runs from the repo root so the
-`templates/…` and `public/…` paths resolve.
-
-**Static build** — render to `public/*.html`:
-
-```sh
-scripts/build.sh /path/to/wfl     # or `scripts/build.sh` if wfl is on your PATH
-# or directly:
-wfl build.wfl
-```
-
-Then open `public/index.html`, or serve the folder with any static server:
-
-```sh
-cd public && python3 -m http.server 8000   # http://localhost:8000
-```
-
-**Live server** — WFL renders each page on every request:
-
-```sh
-scripts/serve.sh /path/to/wfl     # or `scripts/serve.sh`
-# or directly:
-wfl serve.wfl
-# → open http://127.0.0.1:8080
-```
-
-The server binds to localhost by default. To expose it on a network (Docker,
-etc.), set `web_server_bind_address = 0.0.0.0` in a `.wflcfg` file — see the
-[WFL web-server docs](https://github.com/WebFirstLanguage/wfl/blob/main/Docs/04-advanced-features/web-servers.md).
-
-> **Note.** WFL's static checker prints some non-fatal `could not infer type`
-> notes to stderr for calls into the Scribe engine. The program still runs and
-> exits `0` — this is expected (see Scribe's README).
+> **Note.** WFL's static checker prints non-fatal `Undefined action …` /
+> `could not infer type` notes to stderr for cross-file calls resolved at
+> runtime. The program still runs and serves — this is expected.
 
 ## Editing the site
 
-- **Copy & structure** — the templates in `templates/`. `base.html` is the
-  shared page shell; each page extends it and fills the `content` block.
-- **Data & routing** (nav links, feature cards, footer, code samples, routes) —
-  `lib/site.wfl`. It's all plain WFL maps and lists, shared by the static build
-  and the live server.
+- **Marketing copy & structure** — `templates/index.html`,
+  `templates/getting-started.html`, `templates/404.html`, and the shared shell
+  `templates/base.html` + `templates/partials/{nav,footer}.html`. Nav links,
+  feature cards, footer columns, and code samples are plain WFL maps/lists in
+  `lib/site.wfl`.
+- **News** — write and edit posts in `/admin/posts`. The feed and article
+  templates are `templates/news_index.html` and `templates/news_post.html`;
+  standalone CMS pages use `templates/cms_page.html`.
 - **Design tokens** (colors, type, spacing, effects, syntax) — under
-  `public/assets/tokens/` and `public/assets/styles.css`, taken verbatim from
-  the WFL Design System. Site-specific layout and the component ports
-  (buttons, cards, callouts, badges, code blocks) live in
-  `public/assets/site.css`. Every value references a design-system token.
+  `static/ds/` (taken verbatim from the WFL Design System). Site-specific layout
+  and the component ports (buttons, cards, callouts, badges, code blocks) live in
+  `static/site.css`; admin styling in `static/admin.css`. Every value references
+  a design-system token.
 
 ## Design system
 
@@ -155,38 +155,47 @@ The brand is dark, teal-on-Ink, code-forward.
 | Warm Amber | `#F2A73B` | highlight + code strings |
 
 Type: **Alegreya** (display serif, self-hosted), **Hanken Grotesk** (body/UI),
-**JetBrains Mono** (code). The logo mark (`public/assets/img/wfl-mark.svg`) is
-the provided brand mark — an outlined teal speech bubble with a chevron prompt
-and a leaf cursor.
+**JetBrains Mono** (code). The logo mark (`static/ds/assets/wfl-mark.svg`) is an
+outlined teal speech bubble with a chevron prompt and a leaf cursor.
 
 ## Layout
 
 ```
 wfl-web/
-├── build.wfl                 # static: render every page → public/*.html
-├── serve.wfl                 # live: WFL web server, render per request
+├── main.wfl                  # boot (DB open, migrate, seed) + request loop + router
+├── .wflcfg                   # WFL runtime config (bind address, TLS, body-size cap)
+├── app/                      # Scriptorium engine (vendored)
+│   ├── util.wfl · db.wfl · auth.wfl · render.wfl
 ├── lib/
-│   ├── site.wfl              # shared model: content, routing, site_render
+│   ├── site.wfl              # marketing content, routing, code samples
 │   ├── playground.wfl        # live playground: run examples + compute on input
 │   ├── scribe.wfl            # Scribe templating engine (vendored)
 │   ├── highlight.wfl         # WFL-native syntax highlighter
 │   └── icons.wfl             # inline SVG icon set
 ├── playground/examples/      # real .wfl programs the server runs live
 │   └── fizzbuzz.wfl · fibonacci.wfl · primes.wfl
-├── templates/
-│   ├── base.html             # shared shell: <head>, nav, footer, content block
-│   ├── index.html            # landing page
-│   ├── getting-started.html  # docs page
-│   ├── playground.html       # live playground page
-│   ├── 404.html
+├── templates/                # public site (rendered through base.html)
+│   ├── base.html · index.html · getting-started.html · playground.html · 404.html
+│   ├── news_index.html · news_post.html · cms_page.html
 │   └── partials/{nav,footer}.html
-├── public/                   # ← deployable static output + assets
-│   ├── index.html · getting-started.html · playground.html · 404.html
-│   └── assets/               # design-system CSS tokens, fonts, logo, site.css
-└── scripts/{build,serve}.sh
+├── admin/templates/          # admin panel (Scriptorium)
+├── static/                   # served at /assets/*
+│   ├── ds/                   # WFL Design System: tokens, fonts, logo
+│   ├── site.css · admin.css  # site + admin styling
+│   └── uploads/              # uploaded media (runtime)
+├── TestPrograms/             # engine test suites (wfl --test)
+└── scripts/run.sh
+```
+
+## Tests
+
+```sh
+wfl --test TestPrograms/util.test.wfl   # helpers (slugify, file_ext, parsing, …)
+wfl --test TestPrograms/db.test.wfl     # data layer against sqlite::memory:
+wfl --test TestPrograms/auth.test.wfl   # sessions + CSRF token checks
 ```
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE). WFL and the Scribe engine are Apache-2.0;
-the WFL Design System and brand assets are © Logbie LLC.
+Apache-2.0. See [LICENSE](LICENSE). WFL, the Scriptorium engine, and the Scribe
+engine are Apache-2.0; the WFL Design System and brand assets are © Logbie LLC.

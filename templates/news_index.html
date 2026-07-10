@@ -1,0 +1,32 @@
+{% extends "templates/base.html" %}
+{% block content %}
+<div class="wrap">
+
+  <section class="section__head" style="text-align:center;margin-bottom:var(--space-6);">
+    <span class="eyebrow">News</span>
+    <h1 class="hero__title">Latest from <span class="grad">WFL</span></h1>
+    <p class="section__lead">Release notes and announcements from the WFL project — authored and edited in the Scriptorium admin panel.</p>
+  </section>
+
+  <div class="feature-grid">
+  {% for post in posts %}
+    <article class="wfl-card wfl-card--accent wfl-card--interactive">
+      <div style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-2);">{{ post.created_at | truncate(10, '') }} · {{ post.author_name | default('WFL team') }}</div>
+      <h2 class="wfl-card__title"><a href="/post/{{ post.slug }}" style="color:inherit;">{{ post.title }}</a></h2>
+      <p class="wfl-card__body">{{ post.body_markdown | markdown | striptags | truncate(160) }}</p>
+      <a class="wfl-btn wfl-btn--secondary wfl-btn--sm" href="/post/{{ post.slug }}">Read more {{ icons.arrow_right | raw }}</a>
+    </article>
+  {% else %}
+    <p style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No news yet — check back soon.</p>
+  {% endfor %}
+  </div>
+
+  {% if pagination.has_prev or pagination.has_more %}
+  <nav class="cta__actions" style="justify-content:center;margin-top:var(--space-8);">
+    {% if pagination.has_prev %}<a class="wfl-btn wfl-btn--ghost wfl-btn--md" href="{{ pagination.prev_url }}">← Newer</a>{% endif %}
+    {% if pagination.has_more %}<a class="wfl-btn wfl-btn--ghost wfl-btn--md" href="{{ pagination.next_url }}">Older →</a>{% endif %}
+  </nav>
+  {% endif %}
+
+</div>
+{% endblock %}

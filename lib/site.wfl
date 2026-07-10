@@ -5,19 +5,22 @@
 // build.wfl (static: render once, write to public/) and serve.wfl (dynamic:
 // render on each request) call into it, so the two never drift.
 //
-// It is actions-only (no top-level side effects). The caller must have already
-// pulled in the engine and helpers it depends on:
-//     include from "lib/scribe.wfl"     (scribe_render_file)
-//     include from "lib/highlight.wfl"  (wfl_code_block, plain_code_block)
-//     include from "lib/icons.wfl"      (svg_icon)
+// It is actions-only (no top-level side effects). It pulls in everything it and
+// its callers need, each dependency exactly once, forming one linear include
+// spine (see main.wfl for why the app avoids a flat include list):
+//   * render.wfl — the Scriptorium engine (render -> auth -> db -> util) and,
+//     through render, the vendored Scribe engine (scribe_render_file).
+//   * highlight.wfl — wfl_code_block / plain_code_block.
+//   * icons.wfl — svg_icon.
 //
 // Public:
 //     site_render of page_route and served_note   -> HTML text, or "" for an
 //                                                unknown page_route (caller 404s)
 //     site_template_for of page_route             -> template path, or ""
+//     marketing_context / build_shared            -> context maps for templates
 // ============================================================================
 
-include from "scribe.wfl"
+include from "../app/render.wfl"
 include from "highlight.wfl"
 include from "icons.wfl"
 
@@ -52,11 +55,81 @@ end action
 
 // ---- all page_route-independent context (icons, nav, footer, code samples) ------
 
+// The page chrome shared by *every* public page: nav, footer, icons, repo URL.
+// It is deliberately cheap — no code highlighting — so lightweight pages (the
+// News feed, a News post, a CMS page) can build their context without paying
+// for the landing page's highlighted code samples. build_shared composes on top
+// of this, so the nav/footer/icon definitions live in exactly one place.
+//
 // `seed` is unused; a zero-argument action can't be called across included
 // files (WFL parses a bare cross-file name as a variable), so every shared
 // action takes at least one argument.
-define action called build_shared with parameters seed:
+define action called public_chrome with parameters seed:
     store repo_url as "https://github.com/WebFirstLanguage/wfl"
+
+    // Icons referenced by name in the templates.
+    create map icons:
+        "check" is svg_icon of "check"
+        "arrow_right" is svg_icon of "arrow_right"
+        "rocket" is svg_icon of "rocket"
+        "terminal" is svg_icon of "terminal"
+        "download" is svg_icon of "download"
+        "github" is svg_icon of "github"
+        "sparkles" is svg_icon of "sparkles"
+        "book_open" is svg_icon of "book_open"
+    end map
+
+    // Navigation.
+    create list nav_links:
+    end list
+    push with nav_links and (mk_link of "Docs" and "/getting-started")
+    push with nav_links and (mk_link of "Playground" and "/playground")
+    push with nav_links and (mk_link of "News" and "/news")
+    push with nav_links and (mk_link of "Features" and "/#features")
+    push with nav_links and (mk_link of "Compare" and "/#read-it")
+
+    // Footer columns.
+    create list learn_links:
+    end list
+    push with learn_links and (mk_link of "Introduction" and "/getting-started")
+    push with learn_links and (mk_link of "Getting started" and "/getting-started")
+    push with learn_links and (mk_link of "Language basics" and "/getting-started")
+    push with learn_links and (mk_link of "Advanced features" and "/getting-started")
+
+    create list ref_links:
+    end list
+    push with ref_links and (mk_link of "Keywords" and repo_url)
+    push with ref_links and (mk_link of "Standard library" and repo_url)
+    push with ref_links and (mk_link of "Operators" and repo_url)
+    push with ref_links and (mk_link of "Error codes" and repo_url)
+
+    create list community_links:
+    end list
+    push with community_links and (mk_link of "GitHub" and repo_url)
+    push with community_links and (mk_link of "Discussions" and (repo_url with "/discussions"))
+    push with community_links and (mk_link of "Issues" and (repo_url with "/issues"))
+    push with community_links and (mk_link of "Contributing" and (repo_url with "/blob/main/CONTRIBUTING.md"))
+
+    create list footer_cols:
+    end list
+    push with footer_cols and (mk_col of "Learn" and learn_links)
+    push with footer_cols and (mk_col of "Reference" and ref_links)
+    push with footer_cols and (mk_col of "Community" and community_links)
+
+    create map chrome:
+        "repo_url" is repo_url
+        "icons" is icons
+        "nav_links" is nav_links
+        "footer_cols" is footer_cols
+    end map
+    return chrome
+end action
+
+// The full landing/docs context: the shared chrome plus the highlighted code
+// samples, hero copy and feature cards. Only the marketing pages need this.
+define action called build_shared with parameters seed:
+    store chrome as public_chrome of seed
+    store repo_url as chrome["repo_url"]
 
     // Code samples, highlighted by the WFL highlighter.
     store hero_src as "// A web server, in plain English
@@ -109,26 +182,6 @@ display \"Hello, \" with name"
     store run_src as "wfl hello.wfl
 Hello, World!"
 
-    // Icons referenced by name in the templates.
-    create map icons:
-        "check" is svg_icon of "check"
-        "arrow_right" is svg_icon of "arrow_right"
-        "rocket" is svg_icon of "rocket"
-        "terminal" is svg_icon of "terminal"
-        "download" is svg_icon of "download"
-        "github" is svg_icon of "github"
-        "sparkles" is svg_icon of "sparkles"
-        "book_open" is svg_icon of "book_open"
-    end map
-
-    // Navigation.
-    create list nav_links:
-    end list
-    push with nav_links and (mk_link of "Docs" and "getting-started.html")
-    push with nav_links and (mk_link of "Playground" and "playground.html")
-    push with nav_links and (mk_link of "Features" and "index.html#features")
-    push with nav_links and (mk_link of "Compare" and "index.html#read-it")
-
     store hero_meta as ["No frameworks", "Built-in web server", "Open source · Apache 2.0"]
 
     // Feature cards.
@@ -141,41 +194,13 @@ Hello, World!"
     push with features and (mk_feature of "box" and "Containers (OOP)" and "Classes, properties and actions expressed in the same plain-English grammar.")
     push with features and (mk_feature of "alert" and "Errors that help" and "Elm-inspired messages point at the line, explain the mismatch, and suggest a fix.")
 
-    // Footer columns.
-    create list learn_links:
-    end list
-    push with learn_links and (mk_link of "Introduction" and "getting-started.html")
-    push with learn_links and (mk_link of "Getting started" and "getting-started.html")
-    push with learn_links and (mk_link of "Language basics" and "getting-started.html")
-    push with learn_links and (mk_link of "Advanced features" and "getting-started.html")
-
-    create list ref_links:
-    end list
-    push with ref_links and (mk_link of "Keywords" and repo_url)
-    push with ref_links and (mk_link of "Standard library" and repo_url)
-    push with ref_links and (mk_link of "Operators" and repo_url)
-    push with ref_links and (mk_link of "Error codes" and repo_url)
-
-    create list community_links:
-    end list
-    push with community_links and (mk_link of "GitHub" and repo_url)
-    push with community_links and (mk_link of "Discussions" and (repo_url with "/discussions"))
-    push with community_links and (mk_link of "Issues" and (repo_url with "/issues"))
-    push with community_links and (mk_link of "Contributing" and (repo_url with "/blob/main/CONTRIBUTING.md"))
-
-    create list footer_cols:
-    end list
-    push with footer_cols and (mk_col of "Learn" and learn_links)
-    push with footer_cols and (mk_col of "Reference" and ref_links)
-    push with footer_cols and (mk_col of "Community" and community_links)
-
     create map shared:
         "repo_url" is repo_url
         "eyebrow" is "WebFirst Language · v26.1 alpha"
         "hero_sub" is "WFL mirrors how people think — natural-language syntax, almost no special characters, and errors that actually tell you what to do. A first language you never have to unlearn."
-        "icons" is icons
-        "nav_links" is nav_links
-        "footer_cols" is footer_cols
+        "icons" is chrome["icons"]
+        "nav_links" is chrome["nav_links"]
+        "footer_cols" is chrome["footer_cols"]
         "hero_meta" is hero_meta
         "features" is features
         "hero_code" is wfl_code_block of hero_src and "server.wfl"
@@ -195,7 +220,7 @@ end action
 // Every page receives the full data model plus its own title/description and
 // the "served_note" (how this page was produced). Extra keys are harmless.
 
-define action called site_context with parameters page_route and served_note:
+define action called marketing_context with parameters page_route and served_note:
     store s as build_shared of "x"
 
     store the_title as "WFL — Programming that reads like plain English"
@@ -257,6 +282,6 @@ define action called site_render with parameters page_route and served_note:
     check if tpl is "":
         return ""
     end check
-    store ctx as site_context of page_route and served_note
+    store ctx as marketing_context of page_route and served_note
     return scribe_render_file of tpl and ctx
 end action

@@ -1,0 +1,14 @@
+{% extends "templates/base.html" %}
+{% block content %}
+<div class="wrap">
+  <article style="max-width:var(--container-md);margin:0 auto;">
+    <span class="eyebrow">News</span>
+    <h1 class="section__title" style="margin-top:var(--space-2);">{{ post.title }}</h1>
+    <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-6);">{{ post.created_at | truncate(10, '') }} · {{ post.author_name | default('WFL team') }}</p>
+    <div class="prose">{{ post.body_markdown | markdown }}</div>
+    <p style="margin-top:var(--space-8);">
+      <a class="wfl-btn wfl-btn--secondary wfl-btn--md" href="/news">{{ icons.arrow_right | raw }} Back to News</a>
+    </p>
+  </article>
+</div>
+{% endblock %}

@@ -1,5 +1,17 @@
+# SQLite database (created on first run) + WAL/SHM sidecars
+scriptorium.db
+scriptorium.db-*
+
+# Uploaded media (runtime) — keep the directory, ignore its contents
+static/uploads/*
+!static/uploads/.gitkeep
+
 # WFL debug reports (created on runtime errors)
 *_debug.txt
+
+# WFL --parse / --lex dumps (developer artifacts, never committed)
+*.ast.txt
+*.lex.txt
 
 # OS / editor cruft
 .DS_Store

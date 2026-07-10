@@ -1,0 +1,1347 @@
+// ===========================================================================
+// wfl-web — the WFL website, powered by the Scriptorium CMS engine.
+//
+// Run it from the repository root (template + asset paths resolve relative to
+// the working directory):
+//
+//     wfl main.wfl
+//
+// It opens a SQLite database (scriptorium.db, auto-created), serves the public
+// WFL website + a design-system-styled admin panel, and — on first run — seeds
+// an admin account (printing its one-time password) and a few launch News
+// posts.
+//
+// The site is a hybrid:
+//   * The rich marketing pages (home "/", "/getting-started", the live
+//     "/playground", and the 404) are rendered from wfl-web's own templates
+//     (lib/site.wfl, lib/playground.wfl) — content that is HTML, not markdown.
+//   * The News section ("/news", "/post/:slug") is genuine Scriptorium CMS
+//     content: SQLite-backed posts, authored and edited in the /admin panel.
+//
+// Everything loads through ONE include: playground -> site -> { render ->
+// auth -> db -> util, scribe; highlight; icons }. It is a single linear spine
+// on purpose. WFL analyses each included file against the scope that exists at
+// the moment it is included, and rejects a call to an action that an *earlier*
+// include already executed ("… is not a function"); calls to actions a file
+// pulls in through its own nested includes are fine. A flat list of includes
+// here would trip that rule, and any shared dependency (Scribe) included from
+// two branches would be defined twice — which WFL also rejects. The spine keeps
+// each dependency introduced exactly once, nested under its callers.
+//
+// Because WFL's `header`, `path`, and `method` request values are only
+// available in the top-level request loop, the loop reads them once and passes
+// them into the handler actions below.
+// ===========================================================================
+include from "lib/playground.wfl"
+
+// ---------------------------------------------------------------------------
+// Response helpers (respond works inside an action when `req` is a parameter).
+// ---------------------------------------------------------------------------
+define action called send_html with parameters req and body_html:
+    respond to req with body_html and content_type "text/html"
+    return yes
+end action
+
+define action called send_html_status with parameters req and body_html and code:
+    respond to req with body_html and status code and content_type "text/html"
+    return yes
+end action
+
+define action called send_text_status with parameters req and body_text and code:
+    respond to req with body_text and status code and content_type "text/plain"
+    return yes
+end action
+
+// 303 See Other redirect (POST -> GET), path-only Location.
+define action called send_redirect with parameters req and location:
+    create map redirect_headers:
+        "Location" is location
+    end map
+    respond to req with "" and status 303 and headers redirect_headers
+    return yes
+end action
+
+// Redirect and set a cookie in the same response (login / logout).
+define action called send_redirect_cookie with parameters req and location and cookie_value:
+    create map redirect_headers:
+        "Location" is location
+        "Set-Cookie" is cookie_value
+    end map
+    respond to req with "" and status 303 and headers redirect_headers
+    return yes
+end action
+
+// Send HTML and set a cookie in the same response (the login form's CSRF cookie).
+define action called send_html_cookie with parameters req and body_html and cookie_value:
+    create map extra_headers:
+        "Set-Cookie" is cookie_value
+    end map
+    respond to req with body_html and content_type "text/html" and headers extra_headers
+    return yes
+end action
+
+define action called send_forbidden with parameters req:
+    respond to req with "403 — you don't have access to that." and status 403 and content_type "text/plain"
+    return yes
+end action
+
+define action called send_csrf_rejected with parameters req:
+    respond to req with "403 — invalid or missing CSRF token. Go back, reload the page, and try again." and status 403 and content_type "text/plain"
+    return yes
+end action
+
+// Build an optional flash map from a message ("" means no flash).
+define action called make_flash with parameters kind and message:
+    check if message is equal to "":
+        return nothing
+    end check
+    create map fm:
+        "kind" is kind
+        "message" is message
+    end map
+    return fm
+end action
+
+// ---------------------------------------------------------------------------
+// Static assets — GET /assets/*  ->  files under ./static/
+// ---------------------------------------------------------------------------
+define action called serve_asset with parameters req and req_path:
+    // Reject traversal — literal ".." and its percent-encoded / backslash
+    // variants (%2e = ".", %2f = "/", %5c = "\"), matched case-insensitively.
+    // WFL's server hands us the raw, still-encoded path and nothing decodes it
+    // before it reaches the filesystem, so a literal-only check is enough today;
+    // rejecting the encoded forms too keeps this safe if that ever changes.
+    store lower_path as tolowercase of req_path
+    check if (contains of req_path and "..") or (contains of lower_path and "%2e") or (contains of lower_path and "%2f") or (contains of lower_path and "%5c") or (contains of req_path and "\\"):
+        call send_text_status with req and "Forbidden" and 403
+        return yes
+    end check
+    store rel as substring of req_path and 8 and ((length of req_path) minus 8)
+    store filepath as "static/" with rel
+    check if file exists at filepath:
+        open file at filepath for reading binary as asset_file
+        store asset_bytes as read binary from asset_file
+        close file asset_file
+        respond to req with asset_bytes and content_type (mime_type of filepath)
+    otherwise:
+        call send_text_status with req and "Not found" and 404
+    end check
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Public site — the WFL website.
+//
+// The rich pages (home, getting-started, playground, 404) render from wfl-web's
+// own templates via lib/site.wfl / lib/playground.wfl — their content is HTML,
+// not markdown, so it can't live in a CMS body. The News section is genuine
+// Scriptorium CMS content (posts), rendered through the same base.html so the
+// whole public site shares one look and one nav.
+// ---------------------------------------------------------------------------
+
+store live_note as "Rendered live by WFL — powered by Scriptorium."
+
+// -- rich marketing pages ----------------------------------------------------
+
+define action called handle_marketing_home with parameters req:
+    store html as site_render of "/" and live_note
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_getting_started with parameters req:
+    store html as site_render of "/getting-started" and live_note
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_marketing_404 with parameters req:
+    store html as site_render of "/404" and live_note
+    call send_html_status with req and html and 404
+    return yes
+end action
+
+// The live playground: GET renders it, POST runs one interactive tool on the
+// submitted input. It is a public page, so it sits outside the admin CSRF gate.
+define action called handle_playground with parameters req and req_method and req_body:
+    store tool_name as ""
+    store tool_input as ""
+    check if req_method is equal to "POST":
+        store pform as parse_form_urlencoded of req_body
+        change tool_name to form_get of pform and "tool" and ""
+        change tool_input to form_get of pform and "input" and ""
+    end check
+    store html as playground_render of tool_name and tool_input and live_note
+    call send_html with req and html
+    return yes
+end action
+
+// -- News: Scriptorium posts, rendered in the site's own chrome --------------
+
+define action called handle_news_feed with parameters db and req and page_num:
+    store per_page as to_int of (setting_get of db and "posts_per_page" and "5") and 5
+    check if per_page is less than 1:
+        change per_page to 5
+    end check
+    store safe_page as page_num
+    check if safe_page is less than 1:
+        change safe_page to 1
+    end check
+    store offset_val as (safe_page minus 1) times per_page
+    store posts_rows as post_list_published of db and per_page and offset_val
+    store total as post_count_published of db
+
+    store has_more as (safe_page times per_page) is less than total
+    store has_prev as safe_page is greater than 1
+    store prev_page as safe_page minus 1
+    check if prev_page is less than or equal to 1:
+        store prev_url as "/news"
+    otherwise:
+        store prev_url as "/news/page/" with prev_page
+    end check
+
+    store s as public_chrome of "x"
+    create map pag:
+        "has_more" is has_more
+        "has_prev" is has_prev
+        "next_url" is "/news/page/" with (safe_page plus 1)
+        "prev_url" is prev_url
+    end map
+    create map ctx:
+        "page_title" is "News — WFL"
+        "page_desc" is "Release notes and announcements from the WFL project."
+        "served_note" is live_note
+        "repo_url" is s["repo_url"]
+        "icons" is s["icons"]
+        "nav_links" is s["nav_links"]
+        "footer_cols" is s["footer_cols"]
+        "posts" is posts_rows
+        "pagination" is pag
+    end map
+    store html as scribe_render_file of "templates/news_index.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_news_post with parameters db and req and slug:
+    store post_row as post_by_slug of db and slug
+    check if post_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if post_row["status"] is not equal to "published":
+        call handle_marketing_404 with req
+        return yes
+    end check
+    store s as public_chrome of "x"
+    create map ctx:
+        "page_title" is (post_row["title"]) with " — WFL News"
+        "page_desc" is "A WFL project update."
+        "served_note" is live_note
+        "repo_url" is s["repo_url"]
+        "icons" is s["icons"]
+        "nav_links" is s["nav_links"]
+        "footer_cols" is s["footer_cols"]
+        "post" is post_row
+    end map
+    store html as scribe_render_file of "templates/news_post.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+// A CMS page (/page/:slug) — authored in admin, shown in the site chrome.
+define action called handle_cms_page with parameters db and req and slug:
+    store page_row as page_by_slug of db and slug
+    check if page_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    store s as public_chrome of "x"
+    create map ctx:
+        "page_title" is (page_row["title"]) with " — WFL"
+        "page_desc" is "A WFL project page."
+        "served_note" is live_note
+        "repo_url" is s["repo_url"]
+        "icons" is s["icons"]
+        "nav_links" is s["nav_links"]
+        "footer_cols" is s["footer_cols"]
+        "page" is page_row
+    end map
+    store html as scribe_render_file of "templates/cms_page.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called dispatch_public with parameters db and req and req_method and req_path and req_body:
+    check if req_path is equal to "/":
+        call handle_marketing_home with req
+        return yes
+    end check
+    check if req_path is equal to "/getting-started":
+        call handle_getting_started with req
+        return yes
+    end check
+    check if (req_path is equal to "/playground") or (req_path is equal to "/playground/"):
+        call handle_playground with req and req_method and req_body
+        return yes
+    end check
+    check if (req_path is equal to "/news") or (req_path is equal to "/news/"):
+        call handle_news_feed with db and req and 1
+        return yes
+    end check
+    store pg as path_params of req_path and "/news/page/:n"
+    check if pg is not nothing:
+        store n as to_int of pg["n"] and 1
+        call handle_news_feed with db and req and n
+        return yes
+    end check
+    store ps as path_params of req_path and "/post/:slug"
+    check if ps is not nothing:
+        call handle_news_post with db and req and ps["slug"]
+        return yes
+    end check
+    store pp as path_params of req_path and "/page/:slug"
+    check if pp is not nothing:
+        call handle_cms_page with db and req and pp["slug"]
+        return yes
+    end check
+    call handle_marketing_404 with req
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin — authentication
+//
+// The login form is protected with a double-submit CSRF cookie (there is no
+// session yet to bind a token to): rendering the form mints a random token,
+// sets it as a short-lived cookie, and embeds it as a hidden field; the POST
+// must present both, matching, compared in constant time. After login, every
+// admin form instead carries the session-bound token (site.csrf / csrf_ok).
+// ---------------------------------------------------------------------------
+define action called render_login with parameters db and req and form_username and flash_msg:
+    store site_map as site_context of db and nothing
+    store login_tok as generate_csrf_token
+    create map login_form:
+        "username" is form_username
+    end map
+    create map ctx:
+        "site" is site_map
+        "form" is login_form
+        "csrf" is login_tok
+        "flash" is make_flash of "error" and flash_msg
+    end map
+    store html as render_admin of "login.html" and ctx
+    store csrf_cookie as "csrf=" with login_tok with "; HttpOnly; Path=/admin/login; SameSite=Lax; Max-Age=600"
+    call send_html_cookie with req and html and csrf_cookie
+    return yes
+end action
+
+define action called handle_login_form with parameters db and req and user:
+    check if user is not nothing:
+        call send_redirect with req and "/admin"
+        return yes
+    end check
+    call render_login with db and req and "" and ""
+    return yes
+end action
+
+// Extract the pre-login CSRF token from the Cookie header ("" when absent).
+define action called login_csrf_from_cookie with parameters cookie_header:
+    check if cookie_header is nothing:
+        return ""
+    end check
+    store cookies as parse_cookies of cookie_header
+    return field_or of cookies and "csrf" and ""
+end action
+
+define action called handle_login_post with parameters db and req and req_body and cookie_hdr and req_ip:
+    // Rate limit: after 10 failed attempts from one address in 15 minutes,
+    // stop checking credentials at all until the window moves on.
+    store recent_failures as login_attempts_recent of db and req_ip
+    check if recent_failures is greater than or equal to 10:
+        call send_text_status with req and "429 — too many login attempts from your address. Wait 15 minutes and try again." and 429
+        return yes
+    end check
+    store f as parse_form_urlencoded of req_body
+    // Double-submit CSRF check (cookie token vs form token, constant time).
+    store cookie_tok as login_csrf_from_cookie of cookie_hdr
+    store form_tok as field_or of f and "csrf_token" and ""
+    store csrf_valid as no
+    check if (cookie_tok is not equal to "") and (form_tok is not equal to ""):
+        change csrf_valid to constant_time_equals of cookie_tok and form_tok
+    end check
+    check if csrf_valid is not equal to yes:
+        call render_login with db and req and "" and "That form had expired — please sign in again."
+        return yes
+    end check
+    store username as field_or of f and "username" and ""
+    store password as field_or of f and "password" and ""
+    store user as login_check of db and username and password
+    check if user is nothing:
+        store recorded as login_attempt_record of db and req_ip
+        call render_login with db and req and username and "Wrong username or password."
+        return yes
+    end check
+    store cleared as login_attempts_clear of db and req_ip
+    store sid as session_start of db and user["id"]
+    store want_secure as (setting_get of db and "secure_cookies" and "off") is equal to "on"
+    call send_redirect_cookie with req and "/admin" and (session_cookie of sid and want_secure)
+    return yes
+end action
+
+define action called handle_logout with parameters db and req and cookie_hdr:
+    store gone as logout_by_cookie of db and cookie_hdr
+    store cleared_cookie as "sid=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0"
+    call send_redirect_cookie with req and "/admin/login" and cleared_cookie
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin — dashboard
+// ---------------------------------------------------------------------------
+define action called handle_dashboard with parameters db and req and user:
+    store site_map as site_context of db and user
+    create map stats:
+        "posts" is posts_total of db
+        "pages" is pages_total of db
+        "users" is user_count of db
+    end map
+    check if (is_admin of user) is equal to yes:
+        store recent as post_list_all of db
+    otherwise:
+        store recent as post_list_by_author of db and user["id"]
+    end check
+    create map ctx:
+        "site" is site_map
+        "stats" is stats
+        "posts" is recent
+    end map
+    store html as render_admin of "dashboard.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin — posts
+// ---------------------------------------------------------------------------
+define action called render_post_form with parameters db and req and user and post_map and form_title and action_url and flash_msg:
+    store site_map as site_context of db and user
+    create map ctx:
+        "site" is site_map
+        "post" is post_map
+        "form_title" is form_title
+        "action_url" is action_url
+        "flash" is make_flash of "error" and flash_msg
+    end map
+    store html as render_admin of "post_form.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called empty_content_map:
+    create map blank:
+        "id" is ""
+        "title" is ""
+        "slug" is ""
+        "body_markdown" is ""
+        "status" is "draft"
+    end map
+    return blank
+end action
+
+define action called handle_posts_list with parameters db and req and user:
+    store site_map as site_context of db and user
+    check if (is_admin of user) is equal to yes:
+        store rows as post_list_all of db
+    otherwise:
+        store rows as post_list_by_author of db and user["id"]
+    end check
+    create map ctx:
+        "site" is site_map
+        "posts" is rows
+    end map
+    store html as render_admin of "posts_list.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_post_new with parameters db and req and user:
+    call render_post_form with db and req and user and (empty_content_map) and "New post" and "/admin/posts" and ""
+    return yes
+end action
+
+define action called handle_post_create with parameters db and req and req_body and user:
+    store f as parse_form_urlencoded of req_body
+    store the_title as field_or of f and "title" and ""
+    store the_slug as field_or of f and "slug" and ""
+    store the_body as field_or of f and "body_markdown" and ""
+    store the_status as field_or of f and "status" and "draft"
+    check if (trim of the_title) is equal to "":
+        create map entered:
+            "id" is ""
+            "title" is the_title
+            "slug" is the_slug
+            "body_markdown" is the_body
+            "status" is the_status
+        end map
+        call render_post_form with db and req and user and entered and "New post" and "/admin/posts" and "Title is required."
+        return yes
+    end check
+    check if the_slug is equal to "":
+        change the_slug to slugify of the_title
+    otherwise:
+        change the_slug to slugify of the_slug
+    end check
+    check if the_slug is equal to "":
+        change the_slug to "post"
+    end check
+    store ok as yes
+    try:
+        store ins as post_create of db and the_slug and the_title and the_body and the_status and user["id"]
+    when error:
+        change ok to no
+    end try
+    check if ok is equal to no:
+        create map entered2:
+            "id" is ""
+            "title" is the_title
+            "slug" is the_slug
+            "body_markdown" is the_body
+            "status" is the_status
+        end map
+        call render_post_form with db and req and user and entered2 and "New post" and "/admin/posts" and "That slug is already taken — pick another."
+        return yes
+    end check
+    call send_redirect with req and "/admin/posts"
+    return yes
+end action
+
+define action called handle_post_edit with parameters db and req and user and id_text:
+    store the_id as to_int of id_text and 0
+    store post_row as post_by_id of db and the_id
+    check if post_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if (can_edit of user and post_row["author_id"]) is equal to yes:
+        store action_url as "/admin/posts/" with the_id
+        call render_post_form with db and req and user and post_row and "Edit post" and action_url and ""
+    otherwise:
+        call send_forbidden with req
+    end check
+    return yes
+end action
+
+define action called handle_post_update with parameters db and req and req_body and user and id_text:
+    store the_id as to_int of id_text and 0
+    store post_row as post_by_id of db and the_id
+    check if post_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if (can_edit of user and post_row["author_id"]) is equal to yes:
+        store f as parse_form_urlencoded of req_body
+        store the_title as field_or of f and "title" and ""
+        store the_slug as field_or of f and "slug" and ""
+        store the_body as field_or of f and "body_markdown" and ""
+        store the_status as field_or of f and "status" and "draft"
+        check if the_slug is equal to "":
+            change the_slug to slugify of the_title
+        otherwise:
+            change the_slug to slugify of the_slug
+        end check
+        store upd as post_update of db and the_id and the_slug and the_title and the_body and the_status
+        call send_redirect with req and "/admin/posts"
+    otherwise:
+        call send_forbidden with req
+    end check
+    return yes
+end action
+
+define action called handle_post_delete with parameters db and req and user and id_text:
+    store the_id as to_int of id_text and 0
+    store post_row as post_by_id of db and the_id
+    check if post_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if (can_edit of user and post_row["author_id"]) is equal to yes:
+        store del as post_delete of db and the_id
+        call send_redirect with req and "/admin/posts"
+    otherwise:
+        call send_forbidden with req
+    end check
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin — pages (same shape as posts)
+// ---------------------------------------------------------------------------
+define action called render_page_form with parameters db and req and user and page_map and form_title and action_url and flash_msg:
+    store site_map as site_context of db and user
+    create map ctx:
+        "site" is site_map
+        "page" is page_map
+        "form_title" is form_title
+        "action_url" is action_url
+        "flash" is make_flash of "error" and flash_msg
+    end map
+    store html as render_admin of "page_form.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_pages_list with parameters db and req and user:
+    store site_map as site_context of db and user
+    check if (is_admin of user) is equal to yes:
+        store rows as page_list_all of db
+    otherwise:
+        store rows as page_list_by_author of db and user["id"]
+    end check
+    create map ctx:
+        "site" is site_map
+        "pages" is rows
+    end map
+    store html as render_admin of "pages_list.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_page_new with parameters db and req and user:
+    call render_page_form with db and req and user and (empty_content_map) and "New page" and "/admin/pages" and ""
+    return yes
+end action
+
+define action called handle_page_create with parameters db and req and req_body and user:
+    store f as parse_form_urlencoded of req_body
+    store the_title as field_or of f and "title" and ""
+    store the_slug as field_or of f and "slug" and ""
+    store the_body as field_or of f and "body_markdown" and ""
+    store the_status as field_or of f and "status" and "draft"
+    check if (trim of the_title) is equal to "":
+        create map entered:
+            "id" is ""
+            "title" is the_title
+            "slug" is the_slug
+            "body_markdown" is the_body
+            "status" is the_status
+        end map
+        call render_page_form with db and req and user and entered and "New page" and "/admin/pages" and "Title is required."
+        return yes
+    end check
+    check if the_slug is equal to "":
+        change the_slug to slugify of the_title
+    otherwise:
+        change the_slug to slugify of the_slug
+    end check
+    check if the_slug is equal to "":
+        change the_slug to "page"
+    end check
+    store ok as yes
+    try:
+        store ins as page_create of db and the_slug and the_title and the_body and the_status and user["id"]
+    when error:
+        change ok to no
+    end try
+    check if ok is equal to no:
+        create map entered2:
+            "id" is ""
+            "title" is the_title
+            "slug" is the_slug
+            "body_markdown" is the_body
+            "status" is the_status
+        end map
+        call render_page_form with db and req and user and entered2 and "New page" and "/admin/pages" and "That slug is already taken — pick another."
+        return yes
+    end check
+    call send_redirect with req and "/admin/pages"
+    return yes
+end action
+
+define action called handle_page_edit with parameters db and req and user and id_text:
+    store the_id as to_int of id_text and 0
+    store page_row as page_by_id of db and the_id
+    check if page_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if (can_edit of user and page_row["author_id"]) is equal to yes:
+        store action_url as "/admin/pages/" with the_id
+        call render_page_form with db and req and user and page_row and "Edit page" and action_url and ""
+    otherwise:
+        call send_forbidden with req
+    end check
+    return yes
+end action
+
+define action called handle_page_update with parameters db and req and req_body and user and id_text:
+    store the_id as to_int of id_text and 0
+    store page_row as page_by_id of db and the_id
+    check if page_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if (can_edit of user and page_row["author_id"]) is equal to yes:
+        store f as parse_form_urlencoded of req_body
+        store the_title as field_or of f and "title" and ""
+        store the_slug as field_or of f and "slug" and ""
+        store the_body as field_or of f and "body_markdown" and ""
+        store the_status as field_or of f and "status" and "draft"
+        check if the_slug is equal to "":
+            change the_slug to slugify of the_title
+        otherwise:
+            change the_slug to slugify of the_slug
+        end check
+        store upd as page_update of db and the_id and the_slug and the_title and the_body and the_status
+        call send_redirect with req and "/admin/pages"
+    otherwise:
+        call send_forbidden with req
+    end check
+    return yes
+end action
+
+define action called handle_page_delete with parameters db and req and user and id_text:
+    store the_id as to_int of id_text and 0
+    store page_row as page_by_id of db and the_id
+    check if page_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if (can_edit of user and page_row["author_id"]) is equal to yes:
+        store del as page_delete of db and the_id
+        call send_redirect with req and "/admin/pages"
+    otherwise:
+        call send_forbidden with req
+    end check
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin — users (admin only)
+// ---------------------------------------------------------------------------
+define action called render_user_form with parameters db and req and user and edit_user and form_title and action_url and can_delete and flash_msg:
+    store site_map as site_context of db and user
+    create map ctx:
+        "site" is site_map
+        "edit_user" is edit_user
+        "form_title" is form_title
+        "action_url" is action_url
+        "can_delete" is can_delete
+        "flash" is make_flash of "error" and flash_msg
+    end map
+    store html as render_admin of "user_form.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called blank_user_map:
+    create map blank:
+        "id" is ""
+        "username" is ""
+        "role" is "author"
+    end map
+    return blank
+end action
+
+define action called handle_users_list with parameters db and req and user:
+    store site_map as site_context of db and user
+    store rows as user_list of db
+    create map ctx:
+        "site" is site_map
+        "users" is rows
+    end map
+    store html as render_admin of "users_list.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_user_new with parameters db and req and user:
+    call render_user_form with db and req and user and (blank_user_map) and "New user" and "/admin/users" and no and ""
+    return yes
+end action
+
+define action called handle_user_create with parameters db and req and req_body and user:
+    store f as parse_form_urlencoded of req_body
+    store username as field_or of f and "username" and ""
+    store password as field_or of f and "password" and ""
+    store role_name as field_or of f and "role" and "author"
+    check if role_name is not equal to "admin":
+        change role_name to "author"
+    end check
+    store problem as ""
+    check if username is equal to "":
+        change problem to "Username is required."
+    end check
+    check if (problem is equal to "") and (password is equal to ""):
+        change problem to "Password is required for a new user."
+    end check
+    check if problem is not equal to "":
+        create map entered:
+            "id" is ""
+            "username" is username
+            "role" is role_name
+        end map
+        call render_user_form with db and req and user and entered and "New user" and "/admin/users" and no and problem
+        return yes
+    end check
+    store ok as yes
+    try:
+        store ph as hash_password of password
+        store ins as user_create of db and username and ph and role_name
+    when error:
+        change ok to no
+    end try
+    check if ok is equal to no:
+        create map entered2:
+            "id" is ""
+            "username" is username
+            "role" is role_name
+        end map
+        call render_user_form with db and req and user and entered2 and "New user" and "/admin/users" and no and "That username is already taken."
+        return yes
+    end check
+    call send_redirect with req and "/admin/users"
+    return yes
+end action
+
+define action called handle_user_edit with parameters db and req and user and id_text:
+    store the_id as to_int of id_text and 0
+    store edit_user as user_by_id of db and the_id
+    check if edit_user is nothing:
+        call send_text_status with req and "User not found" and 404
+        return yes
+    end check
+    store action_url as "/admin/users/" with the_id
+    store can_delete as (user["id"] is not equal to the_id)
+    call render_user_form with db and req and user and edit_user and "Edit user" and action_url and can_delete and ""
+    return yes
+end action
+
+define action called handle_user_update with parameters db and req and req_body and user and id_text:
+    store the_id as to_int of id_text and 0
+    store edit_user as user_by_id of db and the_id
+    check if edit_user is nothing:
+        call send_text_status with req and "User not found" and 404
+        return yes
+    end check
+    store f as parse_form_urlencoded of req_body
+    store role_name as field_or of f and "role" and "author"
+    check if role_name is not equal to "admin":
+        change role_name to "author"
+    end check
+    store password as field_or of f and "password" and ""
+    store role_upd as user_set_role of db and the_id and role_name
+    check if password is not equal to "":
+        store ph as hash_password of password
+        store pw_upd as user_set_password of db and the_id and ph
+    end check
+    call send_redirect with req and "/admin/users"
+    return yes
+end action
+
+define action called handle_user_delete with parameters db and req and user and id_text:
+    store the_id as to_int of id_text and 0
+    check if user["id"] is equal to the_id:
+        call send_text_status with req and "You cannot delete your own account." and 400
+        return yes
+    end check
+    store del as user_delete of db and the_id
+    call send_redirect with req and "/admin/users"
+    return yes
+end action
+
+define action called dispatch_users with parameters db and req and req_method and req_path and req_body and user:
+    check if req_path is equal to "/admin/users":
+        check if req_method is equal to "POST":
+            call handle_user_create with db and req and req_body and user
+        otherwise:
+            call handle_users_list with db and req and user
+        end check
+        return yes
+    end check
+    check if req_path is equal to "/admin/users/new":
+        call handle_user_new with db and req and user
+        return yes
+    end check
+    store ue as path_params of req_path and "/admin/users/:id/edit"
+    check if ue is not nothing:
+        call handle_user_edit with db and req and user and ue["id"]
+        return yes
+    end check
+    store ud as path_params of req_path and "/admin/users/:id/delete"
+    check if ud is not nothing:
+        check if req_method is equal to "POST":
+            call handle_user_delete with db and req and user and ud["id"]
+        otherwise:
+            call send_text_status with req and "Method not allowed" and 405
+        end check
+        return yes
+    end check
+    store uu as path_params of req_path and "/admin/users/:id"
+    check if uu is not nothing:
+        check if req_method is equal to "POST":
+            call handle_user_update with db and req and req_body and user and uu["id"]
+        otherwise:
+            call send_text_status with req and "Method not allowed" and 405
+        end check
+        return yes
+    end check
+    call send_text_status with req and "Not found" and 404
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin — media library (uploads live under static/uploads/, so they are
+// served by the existing /assets/* route as /assets/uploads/<filename>).
+// ---------------------------------------------------------------------------
+define action called handle_media_list with parameters db and req and user and flash_msg:
+    store site_map as site_context of db and user
+    store rows as media_list_all of db
+    store items as []
+    for each media_row in rows:
+        create map item:
+            "id" is media_row["id"]
+            "filename" is media_row["filename"]
+            "original_name" is media_row["original_name"]
+            "content_type" is media_row["content_type"]
+            "size_kb" is round of (media_row["size"] divided by 1024)
+            "url" is "/assets/uploads/" with media_row["filename"]
+            "uploader_name" is media_row["uploader_name"]
+            "created_at" is media_row["created_at"]
+            "can_delete" is can_edit of user and media_row["uploader_id"]
+        end map
+        push with items and item
+    end for
+    create map ctx:
+        "site" is site_map
+        "media" is items
+        "flash" is make_flash of "error" and flash_msg
+    end map
+    store html as render_admin of "media.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+// POST /admin/media/upload — a multipart/form-data body (the one admin form
+// that is not form-urlencoded, so it validates its CSRF part itself).
+define action called handle_media_upload with parameters db and req and user:
+    store upload_content_type as header "Content-Type" of req
+    store raw_bytes as body_bytes of req
+    store parts as []
+    store parse_failed as no
+    try:
+        change parts to parse_multipart of raw_bytes and upload_content_type
+    when error:
+        change parse_failed to yes
+    end try
+    check if parse_failed is equal to yes:
+        call handle_media_list with db and req and user and "That didn't look like a file upload — try again."
+        return yes
+    end check
+    store submitted_tok as ""
+    store file_part as nothing
+    for each part in parts:
+        store part_name as field_or of part and "name" and ""
+        check if part_name is equal to "csrf_token":
+            change submitted_tok to field_or of part and "content" and ""
+        end check
+        check if part_name is equal to "file":
+            change file_part to part
+        end check
+    end for
+    check if (csrf_ok of user and submitted_tok) is not equal to yes:
+        call send_csrf_rejected with req
+        return yes
+    end check
+    check if file_part is nothing:
+        call handle_media_list with db and req and user and "Choose a file to upload."
+        return yes
+    end check
+    store orig_name as field_or of file_part and "filename" and ""
+    check if orig_name is equal to "":
+        call handle_media_list with db and req and user and "Choose a file to upload."
+        return yes
+    end check
+    store ext as file_ext of orig_name
+    store ext_ok as no
+    check if (ext is equal to "png") or (ext is equal to "jpg") or (ext is equal to "jpeg") or (ext is equal to "gif") or (ext is equal to "webp"):
+        change ext_ok to yes
+    end check
+    check if ext_ok is equal to no:
+        call handle_media_list with db and req and user and "Only png, jpg, jpeg, gif, and webp images can be uploaded."
+        return yes
+    end check
+    store file_bytes as file_part["content_bytes"]
+    check if (length of file_bytes) is equal to 0:
+        call handle_media_list with db and req and user and "That file was empty."
+        return yes
+    end check
+    // Stored name: slug of the original name + random suffix, so uploads never
+    // collide and never carry a path or unexpected characters.
+    store base_name as slugify of (file_stem of orig_name)
+    check if base_name is equal to "":
+        change base_name to "upload"
+    end check
+    store stored_name as base_name with "-" with (secure_random_bytes of 4) with "." with ext
+    store stored_path as "static/uploads/" with stored_name
+    open file at stored_path for writing binary as upload_file
+    write binary file_bytes into upload_file
+    close file upload_file
+    // If the metadata insert fails, remove the just-written file so nothing
+    // stays publicly reachable without a library record.
+    store insert_ok as yes
+    try:
+        store created as media_create of db and stored_name and orig_name and (mime_type of stored_name) and (length of file_bytes) and user["id"]
+    when error:
+        change insert_ok to no
+    end try
+    check if insert_ok is equal to no:
+        try:
+            delete file at stored_path
+        when error:
+            display "Media upload: failed to remove orphaned file " with stored_path
+        end try
+        call handle_media_list with db and req and user and "Saving the upload failed — try again."
+        return yes
+    end check
+    call send_redirect with req and "/admin/media"
+    return yes
+end action
+
+define action called handle_media_delete with parameters db and req and user and id_text:
+    store the_id as to_int of id_text and 0
+    store media_row as media_by_id of db and the_id
+    check if media_row is nothing:
+        call handle_marketing_404 with req
+        return yes
+    end check
+    check if (can_edit of user and media_row["uploader_id"]) is equal to yes:
+        // Remove the DB row first: a leftover file with no record is merely
+        // orphaned bytes, but a record pointing at a deleted file would keep
+        // rendering a broken entry in the library.
+        store del as media_delete of db and the_id
+        store stored_path as "static/uploads/" with media_row["filename"]
+        try:
+            check if file exists at stored_path:
+                delete file at stored_path
+            end check
+        when error:
+            display "Media delete: failed to remove file " with stored_path
+        end try
+        call send_redirect with req and "/admin/media"
+    otherwise:
+        call send_forbidden with req
+    end check
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin — settings (admin only)
+// ---------------------------------------------------------------------------
+define action called handle_settings with parameters db and req and user:
+    store site_map as site_context of db and user
+    create map settings_map:
+        "site_title" is setting_get of db and "site_title" and "Scriptorium"
+        "site_tagline" is setting_get of db and "site_tagline" and ""
+        "posts_per_page" is setting_get of db and "posts_per_page" and "5"
+    end map
+    create map ctx:
+        "site" is site_map
+        "settings" is settings_map
+    end map
+    store html as render_admin of "settings.html" and ctx
+    call send_html with req and html
+    return yes
+end action
+
+define action called handle_settings_save with parameters db and req and req_body and user:
+    store f as parse_form_urlencoded of req_body
+    store t as setting_set of db and "site_title" and (field_or of f and "site_title" and "Scriptorium")
+    store g as setting_set of db and "site_tagline" and (field_or of f and "site_tagline" and "")
+    store ppp as to_int of (field_or of f and "posts_per_page" and "5") and 5
+    check if ppp is less than 1:
+        change ppp to 5
+    end check
+    store p as setting_set of db and "posts_per_page" and ("" with ppp)
+    call send_redirect with req and "/admin/settings"
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Admin dispatch — auth gate + CSRF gate + role gate + route table
+// ---------------------------------------------------------------------------
+define action called dispatch_admin with parameters db and req and req_method and req_path and req_body and cookie_hdr and req_ip and user:
+    // The one admin route that works without a session (it carries its own
+    // double-submit CSRF cookie and the login rate limiter).
+    check if req_path is equal to "/admin/login":
+        check if req_method is equal to "POST":
+            call handle_login_post with db and req and req_body and cookie_hdr and req_ip
+        otherwise:
+            call handle_login_form with db and req and user
+        end check
+        return yes
+    end check
+    // Everything below requires a logged-in user.
+    check if user is nothing:
+        call send_redirect with req and "/admin/login"
+        return yes
+    end check
+    // CSRF gate: every mutating (POST) admin request must echo the session's
+    // token. The multipart upload route carries its token as a form part and
+    // validates it in its handler; every other admin form is form-urlencoded.
+    // This gate only sees POSTs, so every mutating route below must be
+    // POST-only (non-POST -> 405) or a plain GET would slip past it.
+    check if req_method is equal to "POST":
+        check if req_path is not equal to "/admin/media/upload":
+            store gate_form as parse_form_urlencoded of req_body
+            store gate_tok as field_or of gate_form and "csrf_token" and ""
+            check if (csrf_ok of user and gate_tok) is not equal to yes:
+                call send_csrf_rejected with req
+                return yes
+            end check
+        end check
+    end check
+    // Logout is POST-only (a GET must not end the session), and sits behind
+    // the CSRF gate above like every other mutation.
+    check if req_path is equal to "/admin/logout":
+        check if req_method is equal to "POST":
+            call handle_logout with db and req and cookie_hdr
+        otherwise:
+            call send_redirect with req and "/admin"
+        end check
+        return yes
+    end check
+    check if req_path is equal to "/admin":
+        call handle_dashboard with db and req and user
+        return yes
+    end check
+    // Media library (any signed-in user)
+    check if req_path is equal to "/admin/media":
+        call handle_media_list with db and req and user and ""
+        return yes
+    end check
+    check if req_path is equal to "/admin/media/upload":
+        check if req_method is equal to "POST":
+            call handle_media_upload with db and req and user
+        otherwise:
+            call send_redirect with req and "/admin/media"
+        end check
+        return yes
+    end check
+    store mdel as path_params of req_path and "/admin/media/:id/delete"
+    check if mdel is not nothing:
+        check if req_method is equal to "POST":
+            call handle_media_delete with db and req and user and mdel["id"]
+        otherwise:
+            call send_text_status with req and "Method not allowed" and 405
+        end check
+        return yes
+    end check
+    // Posts
+    check if req_path is equal to "/admin/posts":
+        check if req_method is equal to "POST":
+            call handle_post_create with db and req and req_body and user
+        otherwise:
+            call handle_posts_list with db and req and user
+        end check
+        return yes
+    end check
+    check if req_path is equal to "/admin/posts/new":
+        call handle_post_new with db and req and user
+        return yes
+    end check
+    store pe as path_params of req_path and "/admin/posts/:id/edit"
+    check if pe is not nothing:
+        call handle_post_edit with db and req and user and pe["id"]
+        return yes
+    end check
+    store pdd as path_params of req_path and "/admin/posts/:id/delete"
+    check if pdd is not nothing:
+        check if req_method is equal to "POST":
+            call handle_post_delete with db and req and user and pdd["id"]
+        otherwise:
+            call send_text_status with req and "Method not allowed" and 405
+        end check
+        return yes
+    end check
+    store pu as path_params of req_path and "/admin/posts/:id"
+    check if pu is not nothing:
+        check if req_method is equal to "POST":
+            call handle_post_update with db and req and req_body and user and pu["id"]
+        otherwise:
+            call send_text_status with req and "Method not allowed" and 405
+        end check
+        return yes
+    end check
+    // Pages
+    check if req_path is equal to "/admin/pages":
+        check if req_method is equal to "POST":
+            call handle_page_create with db and req and req_body and user
+        otherwise:
+            call handle_pages_list with db and req and user
+        end check
+        return yes
+    end check
+    check if req_path is equal to "/admin/pages/new":
+        call handle_page_new with db and req and user
+        return yes
+    end check
+    store ge as path_params of req_path and "/admin/pages/:id/edit"
+    check if ge is not nothing:
+        call handle_page_edit with db and req and user and ge["id"]
+        return yes
+    end check
+    store gd as path_params of req_path and "/admin/pages/:id/delete"
+    check if gd is not nothing:
+        check if req_method is equal to "POST":
+            call handle_page_delete with db and req and user and gd["id"]
+        otherwise:
+            call send_text_status with req and "Method not allowed" and 405
+        end check
+        return yes
+    end check
+    store gu as path_params of req_path and "/admin/pages/:id"
+    check if gu is not nothing:
+        check if req_method is equal to "POST":
+            call handle_page_update with db and req and req_body and user and gu["id"]
+        otherwise:
+            call send_text_status with req and "Method not allowed" and 405
+        end check
+        return yes
+    end check
+    // Users (admin only)
+    check if starts_with of req_path and "/admin/users":
+        check if (is_admin of user) is equal to yes:
+            call dispatch_users with db and req and req_method and req_path and req_body and user
+        otherwise:
+            call send_forbidden with req
+        end check
+        return yes
+    end check
+    // Settings (admin only)
+    check if req_path is equal to "/admin/settings":
+        check if (is_admin of user) is equal to yes:
+            check if req_method is equal to "POST":
+                call handle_settings_save with db and req and req_body and user
+            otherwise:
+                call handle_settings with db and req and user
+            end check
+        otherwise:
+            call send_forbidden with req
+        end check
+        return yes
+    end check
+    call send_text_status with req and "Not found" and 404
+    return yes
+end action
+
+// ---------------------------------------------------------------------------
+// Top-level dispatch
+// ---------------------------------------------------------------------------
+define action called dispatch with parameters db and req and req_method and req_path and req_body and cookie_hdr and req_ip:
+    store user as current_user of db and cookie_hdr
+    route req_path:
+        when starts with "/assets/":
+            call serve_asset with req and req_path
+        when "/admin":
+            call dispatch_admin with db and req and req_method and req_path and req_body and cookie_hdr and req_ip and user
+        when starts with "/admin/":
+            call dispatch_admin with db and req and req_method and req_path and req_body and cookie_hdr and req_ip and user
+        otherwise:
+            call dispatch_public with db and req and req_method and req_path and req_body
+    end route
+    return yes
+end action
+
+// ===========================================================================
+// Boot: open DB, migrate, seed, then serve.
+// ===========================================================================
+open database at "sqlite://scriptorium.db" as db
+store migrated as db_migrate of db
+store sd1 as setting_default of db and "site_title" and "WFL"
+store sd2 as setting_default of db and "site_tagline" and "Programming that reads like plain English."
+store sd3 as setting_default of db and "posts_per_page" and "6"
+// Off by default so admin login works over plain http://localhost. Set to "on"
+// (Settings, or the DB) in production so the session cookie carries `Secure`.
+store sd4 as setting_default of db and "secure_cookies" and "off"
+
+store existing_users as user_count of db
+check if existing_users is equal to 0:
+    store admin_pw as secure_random_bytes of 9
+    store admin_hash as hash_password of admin_pw
+    store seeded as user_create of db and "admin" and admin_hash and "admin"
+    display "=================================================="
+    display " wfl-web — first run: seeded an admin account"
+    display "   username:  admin"
+    display "   password:  " with admin_pw
+    display "   (shown once — sign in at /admin and add users under Users)"
+    display "=================================================="
+end check
+
+// Seed a few launch News posts on first run so the blog isn't empty. News
+// entries are ordinary Scriptorium posts — edit or add more from /admin/posts.
+store existing_posts as posts_total of db
+check if existing_posts is equal to 0:
+    store news_admin as user_by_username of db and "admin"
+    store news_author as nothing
+    check if news_admin is not nothing:
+        change news_author to news_admin["id"]
+    end check
+
+    store seed_body_1 as "The site you're reading is now served by **Scriptorium**, the WordPress-style CMS written in WFL. The marketing pages, the live playground, and this News section all run on one WFL web server, backed by SQLite.
+
+This means the News you're reading is real CMS content — authored and edited in the `/admin` panel, not baked into the page. Same design system, one server, plain-English code end to end."
+    store sp1 as post_create of db and "the-site-now-runs-on-scriptorium" and "The WFL website now runs on Scriptorium" and seed_body_1 and "published" and news_author
+
+    store seed_body_2 as "WFL 26.1 alpha is available. Highlights:
+
+- **Natural-language syntax** — write `store name as \"Alice\"`, not cryptic symbols.
+- **Type inference** that catches mismatches before your program runs.
+- A **built-in web server** — `listen on port 8080`, no framework required.
+- Elm-inspired error messages that point at the line and suggest a fix.
+
+Head to [Getting started](/getting-started) to build it from source and write your first program."
+    store sp2 as post_create of db and "wfl-26-1-alpha" and "WFL 26.1 alpha is here" and seed_body_2 and "published" and news_author
+
+    store seed_body_3 as "The [playground](/playground) runs real WFL on every request. Three example programs are executed live and their output shown as-is, and the interactive tools hash your text, count its words, and validate email addresses using the WFL standard library and pattern engine.
+
+It's the clearest demonstration of the point: a page about WFL, running WFL, to render itself."
+    store sp3 as post_create of db and "try-the-live-playground" and "Try the live playground" and seed_body_3 and "published" and news_author
+
+    display "wfl-web — seeded 3 launch News posts."
+end check
+
+// Housekeeping: drop expired sessions and stale login-attempt records.
+store purged as session_purge_expired of db
+store purged_attempts as login_attempts_purge of db
+
+// Media uploads are written under static/, so /assets/uploads/* serves them.
+check if directory exists at "static/uploads":
+    store uploads_ready as yes
+otherwise:
+    create directory at "static/uploads"
+end check
+
+listen on port 8080 as web_server
+display "wfl-web (powered by Scriptorium) is running at http://127.0.0.1:8080  (admin: /admin)"
+
+main loop:
+    wait for request comes in on web_server as req
+    store req_method as method
+    store req_path as path
+    store req_body as body
+    store req_ip as client_ip
+    store cookie_hdr as header "Cookie" of req
+    try:
+        store handled as dispatch of db and req and req_method and req_path and req_body and cookie_hdr and req_ip
+    when error:
+        display "Request error on " with req_path with " : " with error_message
+        try:
+            respond to req with "Server error" and status 500 and content_type "text/plain"
+        when error:
+            display "  (response already sent)"
+        end try
+    end try
+end loop
+
+close database db
