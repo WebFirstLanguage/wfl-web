@@ -9,6 +9,10 @@ static/uploads/*
 # WFL debug reports (created on runtime errors)
 *_debug.txt
 
+# WFL --parse / --lex dumps (developer artifacts, never committed)
+*.ast.txt
+*.lex.txt
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db

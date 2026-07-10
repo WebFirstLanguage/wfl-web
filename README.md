@@ -31,7 +31,7 @@ On first run it creates `scriptorium.db`, seeds default settings, prints a
 ==================================================
  wfl-web — first run: seeded an admin account
    username:  admin
-   password:  d1194faad562283922
+   password:  <generated-password>   # a fresh random value is printed here
    (shown once — sign in at /admin and add users under Users)
 ==================================================
 wfl-web — seeded 3 launch News posts.
