@@ -106,7 +106,13 @@ end action
 // Static assets — GET /assets/*  ->  files under ./static/
 // ---------------------------------------------------------------------------
 define action called serve_asset with parameters req and req_path:
-    check if contains of req_path and "..":
+    // Reject traversal — literal ".." and its percent-encoded / backslash
+    // variants (%2e = ".", %2f = "/", %5c = "\"), matched case-insensitively.
+    // WFL's server hands us the raw, still-encoded path and nothing decodes it
+    // before it reaches the filesystem, so a literal-only check is enough today;
+    // rejecting the encoded forms too keeps this safe if that ever changes.
+    store lower_path as tolowercase of req_path
+    check if (contains of req_path and "..") or (contains of lower_path and "%2e") or (contains of lower_path and "%2f") or (contains of lower_path and "%5c") or (contains of req_path and "\\"):
         call send_text_status with req and "Forbidden" and 403
         return yes
     end check
@@ -194,7 +200,7 @@ define action called handle_news_feed with parameters db and req and page_num:
         store prev_url as "/news/page/" with prev_page
     end check
 
-    store s as build_shared of "x"
+    store s as public_chrome of "x"
     create map pag:
         "has_more" is has_more
         "has_prev" is has_prev
@@ -227,7 +233,7 @@ define action called handle_news_post with parameters db and req and slug:
         call handle_marketing_404 with req
         return yes
     end check
-    store s as build_shared of "x"
+    store s as public_chrome of "x"
     create map ctx:
         "page_title" is (post_row["title"]) with " — WFL News"
         "page_desc" is "A WFL project update."
@@ -250,7 +256,7 @@ define action called handle_cms_page with parameters db and req and slug:
         call handle_marketing_404 with req
         return yes
     end check
-    store s as build_shared of "x"
+    store s as public_chrome of "x"
     create map ctx:
         "page_title" is (page_row["title"]) with " — WFL"
         "page_desc" is "A WFL project page."
@@ -513,7 +519,7 @@ define action called handle_post_edit with parameters db and req and user and id
     store the_id as to_int of id_text and 0
     store post_row as post_by_id of db and the_id
     check if post_row is nothing:
-        call handle_404 with db and req and user
+        call handle_marketing_404 with req
         return yes
     end check
     check if (can_edit of user and post_row["author_id"]) is equal to yes:
@@ -529,7 +535,7 @@ define action called handle_post_update with parameters db and req and req_body 
     store the_id as to_int of id_text and 0
     store post_row as post_by_id of db and the_id
     check if post_row is nothing:
-        call handle_404 with db and req and user
+        call handle_marketing_404 with req
         return yes
     end check
     check if (can_edit of user and post_row["author_id"]) is equal to yes:
@@ -555,7 +561,7 @@ define action called handle_post_delete with parameters db and req and user and 
     store the_id as to_int of id_text and 0
     store post_row as post_by_id of db and the_id
     check if post_row is nothing:
-        call handle_404 with db and req and user
+        call handle_marketing_404 with req
         return yes
     end check
     check if (can_edit of user and post_row["author_id"]) is equal to yes:
@@ -655,7 +661,7 @@ define action called handle_page_edit with parameters db and req and user and id
     store the_id as to_int of id_text and 0
     store page_row as page_by_id of db and the_id
     check if page_row is nothing:
-        call handle_404 with db and req and user
+        call handle_marketing_404 with req
         return yes
     end check
     check if (can_edit of user and page_row["author_id"]) is equal to yes:
@@ -671,7 +677,7 @@ define action called handle_page_update with parameters db and req and req_body 
     store the_id as to_int of id_text and 0
     store page_row as page_by_id of db and the_id
     check if page_row is nothing:
-        call handle_404 with db and req and user
+        call handle_marketing_404 with req
         return yes
     end check
     check if (can_edit of user and page_row["author_id"]) is equal to yes:
@@ -697,7 +703,7 @@ define action called handle_page_delete with parameters db and req and user and 
     store the_id as to_int of id_text and 0
     store page_row as page_by_id of db and the_id
     check if page_row is nothing:
-        call handle_404 with db and req and user
+        call handle_marketing_404 with req
         return yes
     end check
     check if (can_edit of user and page_row["author_id"]) is equal to yes:
@@ -1005,7 +1011,7 @@ define action called handle_media_delete with parameters db and req and user and
     store the_id as to_int of id_text and 0
     store media_row as media_by_id of db and the_id
     check if media_row is nothing:
-        call handle_404 with db and req and user
+        call handle_marketing_404 with req
         return yes
     end check
     check if (can_edit of user and media_row["uploader_id"]) is equal to yes:
