@@ -384,7 +384,8 @@ define action called handle_login_post with parameters db and req and req_body a
     end check
     store cleared as login_attempts_clear of db and req_ip
     store sid as session_start of db and user["id"]
-    call send_redirect_cookie with req and "/admin" and (session_cookie of sid)
+    store want_secure as (setting_get of db and "secure_cookies" and "off") is equal to "on"
+    call send_redirect_cookie with req and "/admin" and (session_cookie of sid and want_secure)
     return yes
 end action
 
@@ -1260,6 +1261,9 @@ store migrated as db_migrate of db
 store sd1 as setting_default of db and "site_title" and "WFL"
 store sd2 as setting_default of db and "site_tagline" and "Programming that reads like plain English."
 store sd3 as setting_default of db and "posts_per_page" and "6"
+// Off by default so admin login works over plain http://localhost. Set to "on"
+// (Settings, or the DB) in production so the session cookie carries `Secure`.
+store sd4 as setting_default of db and "secure_cookies" and "off"
 
 store existing_users as user_count of db
 check if existing_users is equal to 0:

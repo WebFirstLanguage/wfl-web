@@ -1300,47 +1300,111 @@ Statement #11: ActionDefinition {
             name: "sid",
             param_type: None,
             default_value: None,
-            line: 124,
+            line: 129,
             column: 53,
+        },
+        Parameter {
+            name: "secure",
+            param_type: None,
+            default_value: None,
+            line: 129,
+            column: 61,
         },
     ],
     body: [
+        VariableDeclaration {
+            name: "base_cookie",
+            value: Concatenation {
+                left: Literal(
+                    String(
+                        "sid=",
+                    ),
+                    130,
+                    26,
+                ),
+                right: Concatenation {
+                    left: Variable(
+                        "sid",
+                        130,
+                        38,
+                    ),
+                    right: Literal(
+                        String(
+                            "; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800",
+                        ),
+                        130,
+                        47,
+                    ),
+                    line: 130,
+                    column: 42,
+                },
+                line: 130,
+                column: 33,
+            },
+            is_constant: false,
+            line: 130,
+            column: 5,
+        },
+        IfStatement {
+            condition: BinaryOperation {
+                left: Variable(
+                    "secure",
+                    131,
+                    14,
+                ),
+                operator: Equals,
+                right: Literal(
+                    Boolean(
+                        true,
+                    ),
+                    131,
+                    33,
+                ),
+                line: 131,
+                column: 21,
+            },
+            then_block: [
+                ReturnStatement {
+                    value: Some(
+                        Concatenation {
+                            left: Variable(
+                                "base_cookie",
+                                132,
+                                16,
+                            ),
+                            right: Literal(
+                                String(
+                                    "; Secure",
+                                ),
+                                132,
+                                33,
+                            ),
+                            line: 132,
+                            column: 28,
+                        },
+                    ),
+                    line: 132,
+                    column: 9,
+                },
+            ],
+            else_block: None,
+            line: 131,
+            column: 5,
+        },
         ReturnStatement {
             value: Some(
-                Concatenation {
-                    left: Literal(
-                        String(
-                            "sid=",
-                        ),
-                        125,
-                        12,
-                    ),
-                    right: Concatenation {
-                        left: Variable(
-                            "sid",
-                            125,
-                            24,
-                        ),
-                        right: Literal(
-                            String(
-                                "; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800",
-                            ),
-                            125,
-                            33,
-                        ),
-                        line: 125,
-                        column: 28,
-                    },
-                    line: 125,
-                    column: 19,
-                },
+                Variable(
+                    "base_cookie",
+                    134,
+                    12,
+                ),
             ),
-            line: 125,
+            line: 134,
             column: 5,
         },
     ],
     return_type: None,
-    line: 126,
+    line: 135,
     column: 11,
 }
 

@@ -121,6 +121,15 @@ end action
 
 // ---- Cookie header values -------------------------------------------------
 
-define action called session_cookie with parameters sid:
-    return "sid=" with sid with "; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800"
+// Build the session cookie. `secure` adds the Secure attribute so the browser
+// only sends the cookie over HTTPS — turn it on in production (behind TLS or a
+// TLS-terminating proxy). It is off by default so admin login keeps working
+// over plain http://localhost during development; the `secure_cookies` setting
+// (seeded in main.wfl) controls it.
+define action called session_cookie with parameters sid and secure:
+    store base_cookie as "sid=" with sid with "; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800"
+    check if secure is equal to yes:
+        return base_cookie with "; Secure"
+    end check
+    return base_cookie
 end action
