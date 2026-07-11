@@ -5,8 +5,7 @@
 // build.wfl (static: render once, write to public/) and serve.wfl (dynamic:
 // render on each request) call into it, so the two never drift.
 //
-// It is actions-only (its single top-level statement is the version-probe
-// cache below — no other top-level side effects). It pulls in everything it and
+// It is actions-only (no top-level side effects). It pulls in everything it and
 // its callers need, each dependency exactly once, forming one linear include
 // spine (see main.wfl for why the app avoids a flat include list):
 //   * render.wfl — the Scriptorium engine (render -> auth -> db -> util) and,
@@ -24,39 +23,6 @@
 include from "../app/render.wfl"
 include from "highlight.wfl"
 include from "icons.wfl"
-
-
-// ---- runtime version probe ---------------------------------------------------
-// The eyebrow shows the real interpreter version instead of a hardcoded string
-// that drifts. Probed once (result cached in the global below) by running
-// `wfl --version`; main.wfl warms the cache at boot so requests never pay for
-// the subprocess. Falls back to "unknown" when no `wfl` is on PATH — the
-// eyebrow then omits the version rather than inventing one.
-// Note: this probes the `wfl` on PATH, which may not be the interpreter
-// actually running the site. Replace with the native version builtin when
-// https://github.com/WebFirstLanguage/wfl/issues/602 lands.
-// (This store is the file's one top-level statement; everything else is
-// actions-only.)
-store wfl_version_cache as ""
-
-define action called wfl_runtime_version with parameters seed:
-    check if wfl_version_cache is "":
-        change wfl_version_cache to "unknown"
-        try:
-            wait for execute command "wfl --version" as ver_result
-            check if ver_result["success"]:
-                // "WebFirst Language (WFL) version 26.7.27" -> "26.7.27"
-                store ver_parts as split (trim of ver_result["output"]) by " version "
-                check if (length of ver_parts) is equal to 2:
-                    change wfl_version_cache to ver_parts[1]
-                end check
-            end check
-        when error:
-            change wfl_version_cache to "unknown"
-        end try
-    end check
-    return wfl_version_cache
-end action
 
 
 // ---- small builders for the data model -------------------------------------
@@ -228,12 +194,9 @@ Hello, World!"
     push with features and (mk_feature of "box" and "Containers (OOP)" and "Classes, properties and actions expressed in the same plain-English grammar.")
     push with features and (mk_feature of "alert" and "Errors that help" and "Elm-inspired messages point at the line, explain the mismatch, and suggest a fix.")
 
-    // Eyebrow: the interpreter's real version, probed at boot — never hardcoded.
-    store wfl_ver as wfl_runtime_version of seed
-    store the_eyebrow as "WebFirst Language · alpha"
-    check if wfl_ver is not "unknown":
-        change the_eyebrow to "WebFirst Language · v" with wfl_ver with " alpha"
-    end check
+    // Eyebrow: the running interpreter's own version (the wfl_version constant,
+    // wfl#602) — never hardcoded, so it can't drift.
+    store the_eyebrow as "WebFirst Language · v" with wfl_version with " alpha"
 
     create map shared:
         "repo_url" is repo_url

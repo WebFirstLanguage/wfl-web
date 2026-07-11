@@ -1322,12 +1322,8 @@ otherwise:
     create directory at "static/uploads"
 end check
 
-// Warm the interpreter-version cache (lib/site.wfl) so no request pays for
-// the `wfl --version` subprocess; the eyebrow uses this real, probed value.
-store wfl_boot_version as wfl_runtime_version of "boot"
-
 listen on port 8080 as web_server
-display "wfl-web (powered by Scriptorium, WFL " with wfl_boot_version with ") is running at http://127.0.0.1:8080  (admin: /admin)"
+display "wfl-web (powered by Scriptorium, WFL " with wfl_version with ") is running at http://127.0.0.1:8080  (admin: /admin)"
 
 main loop:
     wait for request comes in on web_server as req
