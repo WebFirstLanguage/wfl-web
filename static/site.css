@@ -13,7 +13,11 @@ html{scroll-behavior:smooth;}
 html,body{margin:0;background:var(--surface-base);color:var(--text-primary);
   font-family:var(--font-sans);font-size:var(--text-base);line-height:var(--leading-normal);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-body{overflow-x:hidden;}
+/* Region shell: header → body → footer, footer pinned to the viewport bottom
+   on short pages. The three regions are non-negotiable (Scriptorium THEMING.md). */
+body{overflow-x:hidden;display:flex;flex-direction:column;min-height:100vh;}
+.site-body{flex:1 0 auto;}   /* body grows to fill short pages */
+.site-foot{flex-shrink:0;}   /* footer keeps its height        */
 a{color:inherit;text-decoration:none;}
 ::selection{background:var(--accent-soft);}
 :focus-visible{outline:none;box-shadow:var(--glow-focus);border-radius:var(--radius-sm);}
