@@ -1323,7 +1323,7 @@ otherwise:
 end check
 
 listen on port 8080 as web_server
-display "wfl-web (powered by Scriptorium) is running at http://127.0.0.1:8080  (admin: /admin)"
+display "wfl-web (powered by Scriptorium, WFL " with wfl_version with ") is running at http://127.0.0.1:8080  (admin: /admin)"
 
 main loop:
     wait for request comes in on web_server as req

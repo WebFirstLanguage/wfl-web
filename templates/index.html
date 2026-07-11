@@ -11,7 +11,7 @@
       <p class="hero__sub">{{ hero_sub }}</p>
       <div class="hero__cta">
         <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="/getting-started">{{ icons.rocket | raw }} Get started</a>
-        <a class="wfl-btn wfl-btn--secondary wfl-btn--lg" href="{{ repo_url }}">{{ icons.terminal | raw }} Try the REPL</a>
+        <a class="wfl-btn wfl-btn--secondary wfl-btn--lg" href="{{ repo_url }}">{{ icons.github | raw }} View on GitHub</a>
       </div>
       <div class="hero__meta">
         {% for m in hero_meta %}<span>{{ icons.check | raw }} {{ m }}</span>{% endfor %}
@@ -71,24 +71,19 @@
         <div class="wfl-callout wfl-callout--tip" role="note">
           <span class="wfl-callout__icon">{{ icons.sparkles | raw }}</span>
           <div class="wfl-callout__body">
-            <p class="wfl-callout__title">No error codes to google</p>
-            Every message includes the line, the mismatch, and a concrete suggestion.
+            <p class="wfl-callout__title">Real output, not a mock-up</p>
+            This is the exact diagnostic <code>wfl</code> prints for <code>demo.wfl</code> —
+            a program that subtracts a Text from a Number.
           </div>
         </div>
       </div>
-      <pre class="errshow__panel"><span class="err-title">✕ Type Error</span>  <span class="err-loc">line 5, column 8</span>
-
-    Expected: <span class="err-teal">Number</span>
-    Found:    <span class="err-amber">Text ("hello")</span>
-
-  The expression
-    <span class="err-mist">age plus "hello"</span>
-  cannot add a Number and Text.
-
-  <span class="err-amber">💡 Try</span> converting first:
-    <span class="err-mist">age plus 5</span>
-    <span class="err-loc">— or —</span>
-    <span class="err-mist">string of age with "hello"</span></pre>
+      <pre class="errshow__panel"><span class="err-title">error[ERROR]</span>: Cannot perform Minus operation on Number and Text - Expected Number but found Text
+  <span class="err-loc">┌─ demo.wfl:3:13</span>
+  <span class="err-loc">│</span>
+<span class="err-loc">3 │</span> <span class="err-mist">display age minus "hello"</span>
+  <span class="err-loc">│</span>             <span class="err-amber">^ Type error occurred here</span>
+  <span class="err-loc">│</span>
+  <span class="err-loc">=</span> <span class="err-teal">Try converting the text to a number using 'convert to number'</span></pre>
     </div>
   </section>
 
@@ -96,11 +91,11 @@
   <section class="section" id="install">
     <div class="cta">
       <div class="cta__glow"></div>
-      <h2 class="cta__title">Say hello in one line</h2>
+      <h2 class="cta__title">Say hello to WFL</h2>
       <p class="cta__sub">Install WFL and run your first program in under a minute.</p>
       <div class="cta__term"><span class="cta__prompt">$</span> wfl hello.wfl <span class="cta__out">Hello, World!</span></div>
       <div class="cta__actions">
-        <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="{{ repo_url }}/releases">{{ icons.download | raw }} Download for Windows</a>
+        <a class="wfl-btn wfl-btn--primary wfl-btn--lg" href="{{ repo_url }}/releases">{{ icons.download | raw }} Download for Windows (nightly)</a>
         <a class="wfl-btn wfl-btn--ghost wfl-btn--lg" href="/getting-started">Build from source {{ icons.arrow_right | raw }}</a>
       </div>
     </div>

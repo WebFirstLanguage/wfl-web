@@ -10,7 +10,8 @@
 // spine (see main.wfl for why the app avoids a flat include list):
 //   * render.wfl — the Scriptorium engine (render -> auth -> db -> util) and,
 //     through render, the vendored Scribe engine (scribe_render_file).
-//   * highlight.wfl — wfl_code_block / plain_code_block.
+//   * highlight.wfl — wfl_code_block / js_code_block / py_code_block /
+//     plain_code_block.
 //   * icons.wfl — svg_icon.
 //
 // Public:
@@ -133,10 +134,10 @@ define action called build_shared with parameters seed:
 
     // Code samples, highlighted by the WFL highlighter.
     store hero_src as "// A web server, in plain English
-listen on port 8080 as server
+listen on port 8080 as web_server
 display \"Running at http://127.0.0.1:8080\"
 
-wait for request comes in on server as req
+wait for request comes in on web_server as req
 check if path is equal to \"/\":
     respond to req with \"Hello from WFL!\"
 otherwise:
@@ -177,7 +178,7 @@ wfl --version"
 
     store hello_src as "// hello.wfl
 store name as \"World\"
-display \"Hello, \" with name"
+display \"Hello, \" with name with \"!\""
 
     store run_src as "wfl hello.wfl
 Hello, World!"
@@ -194,9 +195,13 @@ Hello, World!"
     push with features and (mk_feature of "box" and "Containers (OOP)" and "Classes, properties and actions expressed in the same plain-English grammar.")
     push with features and (mk_feature of "alert" and "Errors that help" and "Elm-inspired messages point at the line, explain the mismatch, and suggest a fix.")
 
+    // Eyebrow: the running interpreter's own version (the wfl_version constant,
+    // wfl#602) — never hardcoded, so it can't drift.
+    store the_eyebrow as "WebFirst Language · v" with wfl_version with " alpha"
+
     create map shared:
         "repo_url" is repo_url
-        "eyebrow" is "WebFirst Language · v26.1 alpha"
+        "eyebrow" is the_eyebrow
         "hero_sub" is "WFL mirrors how people think — natural-language syntax, almost no special characters, and errors that actually tell you what to do. A first language you never have to unlearn."
         "icons" is chrome["icons"]
         "nav_links" is chrome["nav_links"]
@@ -206,8 +211,8 @@ Hello, World!"
         "hero_code" is wfl_code_block of hero_src and "server.wfl"
         "server_code" is wfl_code_block of hero_src and "server.wfl"
         "compare_wfl" is wfl_code_block of compare_wfl_src and "access.wfl"
-        "compare_js" is plain_code_block of compare_js_src and "access.js"
-        "compare_py" is plain_code_block of compare_py_src and "access.py"
+        "compare_js" is js_code_block of compare_js_src and "access.js"
+        "compare_py" is py_code_block of compare_py_src and "access.py"
         "install_code" is plain_code_block of install_src and "terminal"
         "hello_code" is wfl_code_block of hello_src and "hello.wfl"
         "run_code" is plain_code_block of run_src and "terminal"
