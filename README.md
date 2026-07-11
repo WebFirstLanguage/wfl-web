@@ -60,6 +60,13 @@ Both surfaces render through the **same** `templates/base.html`, so News and the
 marketing pages share one nav, footer, and design system — they never look like
 two different sites.
 
+`base.html` follows the **Scriptorium theme contract**: every page is composed of
+three non-negotiable regions, in order — a **header**
+(`templates/partials/header.html`), a **body** (`<main class="site-body">`), and a
+**footer** (`templates/partials/footer.html`). The full contract lives in the
+Scriptorium repo at [`docs/THEMING.md`](https://github.com/WebFirstLanguage/scriptorium/blob/main/docs/THEMING.md);
+wfl-web is a hand-styled conformant theme.
+
 ## Routes
 
 | Method | Path | What |
@@ -118,7 +125,7 @@ main.wfl
 ```
 
 The templates use Scribe's Twig-style syntax: `{% extends %}` / `{% block %}`
-inheritance from `templates/base.html`, `{% include %}` for the nav and footer
+inheritance from `templates/base.html`, `{% include %}` for the header and footer
 partials, `{% for %}` loops, the `markdown` filter for post/page bodies, and
 `{{ value | raw }}` to emit trusted, pre-highlighted code HTML.
 
@@ -130,7 +137,7 @@ partials, `{% for %}` loops, the `markdown` filter for post/page bodies, and
 
 - **Marketing copy & structure** — `templates/index.html`,
   `templates/getting-started.html`, `templates/404.html`, and the shared shell
-  `templates/base.html` + `templates/partials/{nav,footer}.html`. Nav links,
+  `templates/base.html` + `templates/partials/{header,footer}.html`. Nav links,
   feature cards, footer columns, and code samples are plain WFL maps/lists in
   `lib/site.wfl`.
 - **News** — write and edit posts in `/admin/posts`. The feed and article
@@ -177,7 +184,7 @@ wfl-web/
 ├── templates/                # public site (rendered through base.html)
 │   ├── base.html · index.html · getting-started.html · playground.html · 404.html
 │   ├── news_index.html · news_post.html · cms_page.html
-│   └── partials/{nav,footer}.html
+│   └── partials/{header,footer}.html
 ├── admin/templates/          # admin panel (Scriptorium)
 ├── static/                   # served at /assets/*
 │   ├── ds/                   # WFL Design System: tokens, fonts, logo

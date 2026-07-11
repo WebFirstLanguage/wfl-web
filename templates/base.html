@@ -13,8 +13,10 @@
   <link rel="stylesheet" href="/assets/site.css" />
 </head>
 <body>
-{% include "templates/partials/nav.html" %}
-<main>
+{# The three non-negotiable regions, in order: header → body → footer.
+   Contract lives in the Scriptorium theme guidelines (docs/THEMING.md). #}
+{% include "templates/partials/header.html" %}
+<main class="site-body">
 {% block content %}{% endblock %}
 </main>
 {% include "templates/partials/footer.html" %}
