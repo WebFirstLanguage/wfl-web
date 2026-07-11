@@ -10,7 +10,8 @@
 // spine (see main.wfl for why the app avoids a flat include list):
 //   * render.wfl — the Scriptorium engine (render -> auth -> db -> util) and,
 //     through render, the vendored Scribe engine (scribe_render_file).
-//   * highlight.wfl — wfl_code_block / plain_code_block.
+//   * highlight.wfl — wfl_code_block / js_code_block / py_code_block /
+//     plain_code_block.
 //   * icons.wfl — svg_icon.
 //
 // Public:
@@ -210,8 +211,8 @@ Hello, World!"
         "hero_code" is wfl_code_block of hero_src and "server.wfl"
         "server_code" is wfl_code_block of hero_src and "server.wfl"
         "compare_wfl" is wfl_code_block of compare_wfl_src and "access.wfl"
-        "compare_js" is plain_code_block of compare_js_src and "access.js"
-        "compare_py" is plain_code_block of compare_py_src and "access.py"
+        "compare_js" is js_code_block of compare_js_src and "access.js"
+        "compare_py" is py_code_block of compare_py_src and "access.py"
         "install_code" is plain_code_block of install_src and "terminal"
         "hello_code" is wfl_code_block of hello_src and "hello.wfl"
         "run_code" is plain_code_block of run_src and "terminal"
