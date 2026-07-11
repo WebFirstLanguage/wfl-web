@@ -133,10 +133,10 @@ define action called build_shared with parameters seed:
 
     // Code samples, highlighted by the WFL highlighter.
     store hero_src as "// A web server, in plain English
-listen on port 8080 as server
+listen on port 8080 as web_server
 display \"Running at http://127.0.0.1:8080\"
 
-wait for request comes in on server as req
+wait for request comes in on web_server as req
 check if path is equal to \"/\":
     respond to req with \"Hello from WFL!\"
 otherwise:
@@ -177,7 +177,7 @@ wfl --version"
 
     store hello_src as "// hello.wfl
 store name as \"World\"
-display \"Hello, \" with name"
+display \"Hello, \" with name with \"!\""
 
     store run_src as "wfl hello.wfl
 Hello, World!"
@@ -196,7 +196,7 @@ Hello, World!"
 
     create map shared:
         "repo_url" is repo_url
-        "eyebrow" is "WebFirst Language · v26.1 alpha"
+        "eyebrow" is "WebFirst Language · v26.7 alpha"
         "hero_sub" is "WFL mirrors how people think — natural-language syntax, almost no special characters, and errors that actually tell you what to do. A first language you never have to unlearn."
         "icons" is chrome["icons"]
         "nav_links" is chrome["nav_links"]
