@@ -32,6 +32,9 @@ include from "icons.wfl"
 // `wfl --version`; main.wfl warms the cache at boot so requests never pay for
 // the subprocess. Falls back to "unknown" when no `wfl` is on PATH — the
 // eyebrow then omits the version rather than inventing one.
+// Note: this probes the `wfl` on PATH, which may not be the interpreter
+// actually running the site. Replace with the native version builtin when
+// https://github.com/WebFirstLanguage/wfl/issues/602 lands.
 // (This store is the file's one top-level statement; everything else is
 // actions-only.)
 store wfl_version_cache as ""
